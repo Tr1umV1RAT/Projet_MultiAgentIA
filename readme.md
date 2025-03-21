@@ -107,6 +107,7 @@ Pour lancer un débat contradictoire entre deux agents aux rôles opposés, exé
 git clone https://github.com/Tr1umV1RAT/Projet_MultiAgentIA.git
 cd Projet_MultiAgentIA
 python debate.py "le réchauffement climatique"
+```
 
 Ce script instancie deux agents (par exemple, Alice avec un rôle scientifique et Bob avec un rôle climato-sceptique) et lance une discussion interactive sur le thème fourni.  
 Les échanges se déroulent sur plusieurs tours (5 par défaut), et l'affichage des messages est contrôlé via le paramètre **VERBOSE_COMMUNICATION** défini dans `config.py` ou via les options de la team.
