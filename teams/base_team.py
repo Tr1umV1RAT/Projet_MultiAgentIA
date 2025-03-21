@@ -1,97 +1,53 @@
-import os
-from skills.db_management.db_management import DBManagementSkill
-from skills.communication.messages import Message
-from agents.base_agent import BaseAgent
-import argparse
+from skills.communication.communication import Communication
+from skills.communication.message import Message
 
 class BaseTeam:
-    def __init__(self, nom, agents, schema_db, n_round=5, web=False, overwrite_db=False):
-        self.nom = nom
-        self.agents = agents
-        self.n_round = n_round
-        self.web = web
-        
-        # Création automatique du dossier du projet
-        self.dossier = os.path.join("teams", self.nom)
-        os.makedirs(self.dossier, exist_ok=True)
-
-        # Base de données mémoire projet avec gestion explicite
-        self.db_skill = DBManagementSkill(
-            f"{self.dossier}/{nom}_memory.db",
-            schema=schema_db,
-            overwrite=overwrite_db,
-            adapt_name_if_exists=True
-        )
-
-        # Affectation explicite de la mémoire persistante commune à tous les agents
-        for agent in self.agents:
-            agent.memoire_persistante = self.db_skill
-
-        self.n_round = n_round
-        self.web = web
-
-    @classmethod
-    def from_cli(cls, schema_db):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("sujet", help="Sujet explicite du débat ou du projet.")
-        parser.add_argument("-a", "--actors", type=str, default=None, help="Acteurs impliqués séparés par des virgules.")
-        parser.add_argument("--n_round", type=int, default=5, help="Nombre explicite de rounds.")
-        parser.add_argument("--web", action="store_true", help="Activation explicite de la recherche web.")
-        parser.add_argument("--overwrite_db", action='store_true', help="Écrase explicitement la base existante.")
-
-        args = parser.parse_args()
-
-        self.nom = args.sujet
-        self.n_round = args.n_round
-        self.web = args.web
-        self.projet_dir = os.path.join("teams", self.nom)
-        os.makedirs(self.projet_dir, exist_ok=True)
-
-        agents = []
-
-        roles_map = {"scientifique": Scientifique, "climato-sceptique": ClimatoSceptique}
-
-        if args.actors is None:
-            agents = [
-                BaseAgent("Scientifique", roles_map["scientifique"]()),
-                BaseAgent("Sceptique", roles_map["climato-sceptique"]())
-            ]
+    """Classe de base orchestrant une équipe d'agents dans des tours de communication."""
+    def __init__(self, nom_projet: str, objectif: str, agents, n_rounds: int = 5, verbose: bool = False):
+        """
+        Initialise l'équipe et le système de communication.
+        Paramètres:
+        - nom_projet : Nom du projet de l'équipe (utilisé pour le contexte, logs, etc.)
+        - objectif   : Objectif assigné à l'équipe (description de la tâche à accomplir).
+        - agents     : Liste (ou dictionnaire) des agents participants.
+        - n_rounds   : Nombre de tours d'interaction prévus.
+        - verbose    : Si True, active le mode verbeux (affichage de tous les messages de dialogue).
+        """
+        self.nom_projet = nom_projet
+        self.objectif = objectif
+        # Stocker les agents dans une liste ordonnée et un dictionnaire pour référence par nom.
+        if isinstance(agents, dict):
+            self.agents = list(agents.values())
+            self.agents_dict = agents
         else:
-            for role_name in args.actors.split(","):
-                RoleClass = roles_map.get(role_name.strip().lower(), None)
-                if RoleClass:
-                    role_instance = RoleClass()
-                    if self.web:
-                        from tools.web_search_tool import WebSearchTool
-                        if "WebSearchTool" not in [outil.nom for outil in role_instance.outils]:
-                            role_instance.outils.append(WebSearchTool())
-                    agent = BaseAgent(role_name.capitalize(), role_instance)
-                    agents.append(agent)
+            self.agents = list(agents)
+            self.agents_dict = {getattr(ag, "name", getattr(ag, "nom", str(i))): ag 
+                                for i, ag in enumerate(self.agents)}
+        # Créer le module de communication asynchrone pour l'équipe.
+        # Cela initialise les files de messages de chaque agent et leur attribue self.communication.
+        self.communication = Communication(self.agents, verbose=verbose)
+        self.n_rounds = n_rounds
+        self.verbose = verbose
 
-        self.agents = agents
-
-        self.db_skill = DBManagementSkill(
-            f"{self.projet_dir}/{self.nom}_memory.db",
-            schema=schema_db,
-            adapt_name_if_exists=True,
-            overwrite=False
-        )
-
-        # Mémoire persistante pour chaque agent
-        for agent in self.agents:
-            agent.memoire_persistante = self.db_skill
-
-        print(f"✅ Team '{self.nom}' initialisée avec {len(self.agents)} agents.")
-
-    def envoyer_consigne_team(self, consigne, destinataire="tous"):
-        """Envoi explicite de consigne à toute la team ou à certains agents"""
-        message = Message("System", destinataire, consigne, memoriser=True)
-        for round in range(self.n_round):
-            print(f"\n🔄 Round {round+1}/{self.n_round} :")
+    def run(self):
+        """Exécute la séquence de tours d'interaction entre les agents."""
+        for tour in range(1, self.n_rounds + 1):
+            if self.verbose:
+                print(f"\n--- Tour {tour} ---")
+            # Pour chaque agent, déclencher son traitement des messages reçus et son action éventuelle.
             for agent in self.agents:
-                agent.communication.envoyer(message)
-                agent.communication.recevoir(agent)
+                # Chaque agent doit implémenter une méthode process_messages() pour définir son comportement à chaque tour.
+                if hasattr(agent, "process_messages"):
+                    agent.process_messages()
+                else:
+                    raise AttributeError(f"L'agent {agent} n'a pas de méthode process_messages() pour traiter son tour.")
+        if self.verbose:
+            print(f"\n*** Fin des {self.n_rounds} tours d'interaction ***")
 
     def cloturer(self):
-        """Fermeture explicite de la DB"""
-        self.db_skill.close()
+        """
+        Termine l'interaction de l'équipe.
+        Cette méthode peut être étendue pour réaliser des opérations de finalisation 
+        (ex: affichage de résultats, sauvegarde de l'historique, etc.).
+        """
+        print("Interaction terminée.")
