@@ -1,10 +1,11 @@
 from skills.base_skill import BaseSkill
-from tools.ollama_tool import OllamaTool
+from tools.llm_adapter import LLMAdapterTool
 
 class Reasoning(BaseSkill):
-    def __init__(self, name="Reasoning", model="mistral"):
+    def __init__(self, name="Reasoning"):
         super().__init__(name)
-        self.ollama = OllamaTool(model=model)
+        # Initialise un outil LLMAdapterTool pour centraliser les appels au LLM
+        self.llm_tool = LLMAdapterTool()
 
     def reflechir(self, prompt):
-        return self.ollama.run(prompt)
+        return self.llm_tool.run(prompt)

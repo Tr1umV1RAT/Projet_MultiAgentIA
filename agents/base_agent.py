@@ -32,7 +32,6 @@ class BaseAgent:
             outil = self.outils.get(nom_outil.strip())
             if outil:
                 resultat = outil.run(query)
-
                 message_reponse = Message(
                     origine=self.nom,
                     destinataire="Utilisateur",
@@ -40,7 +39,6 @@ class BaseAgent:
                     affichage_force=True,
                     type_message="resultat_outil"
                 )
-
                 if self.memoire_persistante:
                     self.memoire_persistante.save_message(message_reponse)
             else:
@@ -52,8 +50,11 @@ class BaseAgent:
                 )
         else:
             prompt_final = self.role.generer_prompt(message.contenu) if self.role else message.contenu
-            reponse = self.raisonnement.reflechir(prompt_final)
-
+            # Utilisation de l'adaptateur LLM (injection via rôle ou directe selon la config)
+            if Config.LLM_INJECTION_MODE == "role" and "LLM" in self.outils:
+                reponse = self.outils["LLM"].run(prompt_final)
+            else:
+                reponse = self.raisonnement.reflechir(prompt_final)
             message_reponse = Message(
                 origine=self.nom,
                 destinataire=message.origine,
@@ -61,8 +62,6 @@ class BaseAgent:
                 affichage_force=True,
                 type_message="dialogue"
             )
-
             if self.memoire_persistante:
                 self.memoire_persistante.save_message(message_reponse)
-
-        self.communication.envoyer(message_reponse)
+            self.communication.envoyer(message_reponse)

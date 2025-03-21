@@ -1,6 +1,15 @@
-class BaseTool:
-    def __init__(self, name="Tool"):
-        self.name = name
+from abc import ABC, abstractmethod
 
-    def run(self, *args, **kwargs):
-        raise NotImplementedError("La méthode run() doit être implémentée.")
+class BaseTool(ABC):
+    def __init__(self, name: str, description: str = ""):
+        self.name = name
+        self.description = description
+
+    @abstractmethod
+    def run(self, prompt: str) -> str:
+        """
+        Méthode à implémenter par chaque outil spécifique.
+        :param prompt: Le texte d'entrée pour l'outil.
+        :return: La réponse générée par l'outil.
+        """
+        pass

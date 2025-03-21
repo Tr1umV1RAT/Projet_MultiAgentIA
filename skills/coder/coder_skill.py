@@ -1,21 +1,21 @@
 from skills.base_skill import BaseSkill
-from tools.ollama_tool import OllamaTool  # Outil de génération de code basé sur Ollama
 
 class CoderSkill(BaseSkill):
-    def __init__(self):
+    def __init__(self, tools):
         super().__init__(
             name="CoderSkill",
             description="Compétence pour générer du code en fonction des spécifications fournies.",
-            tools=[OllamaTool()]
+            tools=tools
         )
 
     def execute(self, specifications: str) -> str:
         """
         Génère du code basé sur les spécifications fournies.
-
         :param specifications: Les spécifications détaillées du code à écrire.
-        :return: Code source généré.
+        :return: Le code source généré.
         """
+        if not self.tools:
+            raise ValueError("Aucun outil LLM n'est disponible pour exécuter cette compétence.")
         prompt = f"""
         Tu es un développeur Python expérimenté. Écris du code en suivant ces spécifications :
 
@@ -28,3 +28,4 @@ class CoderSkill(BaseSkill):
         - Est optimisé pour l'efficacité
         """
         return self.tools[0].run(prompt)
+
