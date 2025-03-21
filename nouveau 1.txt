@@ -1,0 +1,42 @@
+# src/scraping.py
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+def scrape_annonces(url):
+    """
+    Exécute une requête HTTP sur l'URL donnée, analyse le contenu HTML et extrait les annonces.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Vérifie que la requête a réussi
+    except requests.RequestException as e:
+        print("Erreur lors de la requête :", e)
+        return pd.DataFrame()  # Retourne un DataFrame vide en cas d'erreur
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    annonces = []
+
+    # Exemple : chaque annonce est dans une div avec la classe 'annonce'
+    for div in soup.find_all('div', class_='annonce'):
+        # Extraction des informations importantes
+        titre = div.find('h2').get_text(strip=True) if div.find('h2') else "N/A"
+        prix = div.find('span', class_='prix').get_text(strip=True) if div.find('span', class_='prix') else "N/A"
+        localisation = div.find('span', class_='localisation').get_text(strip=True) if div.find('span', class_='localisation') else "N/A"
+        
+        # Tu peux ajouter d'autres champs (superficie, nombre de pièces, etc.)
+        annonce = {
+            'titre': titre,
+            'prix': prix,
+            'localisation': localisation
+        }
+        annonces.append(annonce)
+
+    return pd.DataFrame(annonces)
+
+if __name__ == "__main__":
+    # Exemple d'URL (à adapter selon le site cible)
+    url_exemple = 'https://www.exemple-immobilier.com/location'
+    df = scrape_annonces(url_exemple)
+    print(df.head())
