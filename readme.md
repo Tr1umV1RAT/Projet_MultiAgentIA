@@ -145,7 +145,7 @@ Pour contribuer, clonez le dépôt, créez une branche pour vos modifications, e
 
 ```bash
 git clone https://github.com/Tr1umV1RAT/Projet_MultiAgentIA.git
-
+```
 
 ## Licence
 
