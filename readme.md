@@ -1,132 +1,61 @@
-# Projet MultiAgentIA
-
-Ce projet vise à créer un système d'agents intelligents, modulaires et collaboratifs, capables de travailler seuls ou en équipe. Le but final est de permettre à un utilisateur de lancer des commandes (par exemple, "code moi un jeu") et d'obtenir un résultat cohérent et de haute qualité, généré par la collaboration de plusieurs agents spécialisés.
-
----
-
-## 1. Concepts Clés
-
-- **Modularité**  
-  Le système est conçu pour être extrêmement modulaire :  
-  - Chaque composant (agent, rôle, skill, outil, communication, mémoire) est développé de manière isolée pour faciliter l'extension et la maintenance.
-  - Les rôles fournissent du contexte et des instructions spécifiques, influençant la génération des prompts pour l’IA.
-  - L'utilisation des outils (comme les appels LLM et la recherche Web) est intégrée pour augmenter les capacités de chaque agent.
-
-- **Mémoire**  
-  - **Mémoire individuelle** : Chaque agent dispose d'une mémoire distincte, à court terme (en mémoire interne) et d'une mémoire persistante (base de données personnelle) qui peut être gérée indépendamment.
-  - **Registre de bases de données** : Un registre global de DB est prévu pour éviter de réécrire toute la structure et permettre à un agent ou un module de créer et utiliser une base de données pour un usage spécifique.
-
-- **Communication Inter-Agent**  
-  - Les échanges se font via un système de messages enrichis (incluant des métadonnées).
-  - Le système vise à rendre la communication entre agents aussi naturelle que possible dès l'utilisation d'une team. Un appel du type `BaseTeam(agent1, agent2, "prompt utilisateur")` devrait déclencher une interaction fluide.
-  - La communication intègre les contextes fournis par les rôles, garantissant que l’IA génère des réponses alignées avec le profil de l’agent.
-
-- **Utilisation des Outils**  
-  - Chaque agent peut disposer d’outils spécifiques (ex. LLM, WebSearchTool) qui peuvent être invoqués directement ou via son rôle.
-  - L'architecture permet une injection dynamique des outils selon le contexte ou le rôle assigné.
-
----
-
-## 2. Architecture Technique
-
-### Structure du Dépôt
-
-- **agents/**  
-  Contient la logique de base des agents, qui héritent d'une classe de base commune.
-  
-- **roles/**  
-  Définit les rôles spécifiques (Scientifique, ClimatoSceptique, Codeur, Reviewer, etc.) qui apportent le contexte et les instructions propres à chaque agent.
-
-- **skills/**  
-  Modules de compétences (communication, reasoning, mémoire, etc.) permettant aux agents de traiter les messages et d'interagir avec le LLM.
-
-- **tools/**  
-  Contient les adaptateurs d'outils externes (ex. `llm_adapter.py`, `web_search_tool.py`). Le module `llm_adapter.py` centralise tous les appels LLM et lit les paramètres de configuration via `config.py`.
-
-- **teams/**  
-  Gère la composition des équipes d'agents et leur orchestration (ex. `DebateTeam`, `CodeTeam`).
-
-- **utils/**  
-  Contient les outils utilitaires divers.
-
-- **config.py**  
-  Fichier central de configuration où sont définis tous les paramètres clés : fournisseur LLM, modèle, endpoint, API key, mode d’injection, etc.
-
-### Communication et Mémoire
-
-- **Communication**  
-  - La classe `Communication` gère l’envoi et la réception de messages entre agents.  
-  - Le message contient des métadonnées (origine, destinataire, type, etc.) qui permettront d'acheminer les échanges de façon naturelle.
-
-- **Mémoire**  
-  - Chaque agent possède une mémoire courte (session interne) et une mémoire persistante (stockée dans une DB dédiée).
-  - Le registre de DB est présent pour permettre à tout agent de créer ou utiliser une nouvelle base sans modifier la structure globale.
-
----
-
-## 3. Feuille de Route
-
-### A. Améliorations de la Communication Inter-Agent
-
-- **Objectif** : Rendre les échanges plus naturels et interactifs.
-  - Revoir la logique dans `BaseTeam` et/ou le module `Communication` pour que l'appel d'une team du type `BaseTeam(agent1, agent2, "prompt utilisateur")` déclenche une interaction réelle :
-    - Diffuser la consigne à tous les agents impliqués.
-    - Intégrer un mécanisme de boucle ou de médiation permettant à chaque agent de réagir aux réponses précédentes.
-    - Revoir la gestion du champ `destinataire` pour que les messages ne soient pas seulement adressés au "System" mais redistribués aux agents concernés.
-    
-### B. Gestion de la Mémoire
-
-- **Objectif** : Assurer que chaque agent dispose d'une mémoire distincte et exploitable, tout en permettant l'utilisation d'autres DB via le registre.
-  - Implémenter l'usage actif de la mémoire dans les prompts en intégrant un résumé du contexte ou des messages précédents lors de l'appel au LLM (par exemple dans le module de reasoning ou directement dans `BaseRole.generer_prompt`).
-  - Clarifier et unifier l'usage de la mémoire persistante et du registre de DB pour éviter les redondances (fusionner ou clarifier les rôles de `DBManagementSkill` et `LongTermMemory`).
-
-### C. Amélioration de la Gestion des Outils
-
-- **Objectif** : Faciliter l'injection et l'utilisation dynamique des outils.
-  - Permettre, via la configuration (et/ou les rôles), l'ajout ou la suppression d'outils spécifiques sans modification directe du code.
-  - Intégrer dans les prompts des indications sur l'utilisation possible des outils (ex. « Tu as accès à WebSearchTool. ») pour guider le LLM.
-  - S'assurer que les appels aux outils génèrent bien une chaîne d'action (exécuter la commande et réinjecter le résultat dans la conversation).
-
-### D. Modularité et Extension
-
-- **Objectif** : Garder le principe de modularité comme maître-mot.
-  - Vérifier que chaque composant (agent, rôle, skill, outil, équipe, mémoire) est bien découplé des autres et peut être remplacé ou étendu indépendamment.
-  - Prévoir un mécanisme de "plug-in" pour faciliter l’ajout de nouveaux outils ou de nouvelles logiques de communication sans modifier le cœur du système.
-  - Documenter les interfaces de chaque module pour que les futurs contributeurs (ou toi-même) puissent intervenir facilement sur chacun des composants.
-
----
-
-## 4. Conclusion
-
-Ce projet repose sur une architecture ambitieuse où la modularité est au cœur de la conception. Les axes d'amélioration principaux concernent :
-
-- **La communication** : Rendre l'échange entre agents plus fluide et interactif.
-- **La mémoire** : Utiliser activement la mémoire pour alimenter le contexte des débats et permettre aux agents d'avoir un historique dynamique.
-- **Les outils** : Assurer une injection et une utilisation flexible des outils, sans modification directe du code.
-- **La modularité** : Veiller à ce que chaque composant reste indépendant et facilement extensible.
-
-Ce README se veut la base de discussion et d'évolution pour le projet. Chaque point de la feuille de route pourra être abordé et implémenté progressivement. L'idée est de construire un système d'agents collaboratifs qui reste fidèle à l'esprit de modularité et qui permette d'étendre, sans réécrire l'architecture, l'ensemble des fonctionnalités souhaitées.
-
----
-
-## 5. Prochaines Étapes
-
-1. **Communication**  
-   - Revoir et modifier le module `Communication` et/ou `BaseTeam` pour gérer les échanges inter-agents de manière dynamique (envoi aux destinataires appropriés, gestion de tours de parole, etc.).
-
-2. **Mémoire**  
-   - Activer et exploiter la mémoire (tant courte que persistante) dans la génération des prompts via le module de reasoning.
-   - Intégrer le registre de DB de façon cohérente dans le workflow.
-
-3. **Outils**  
-   - Ajouter des indications dans les rôles pour que le LLM sache exploiter les outils disponibles.
-   - Vérifier que chaque outil est correctement injecté dans l'agent via son rôle.
-
-4. **Documentation et Tests**  
-   - Documenter en détail chaque module et prévoir des tests unitaires pour chaque composant afin d'assurer la robustesse du système.
-
-Chaque étape devra être discutée et validée point par point pour s'assurer que le projet évolue dans la direction souhaitée.
-
----
-
-*N'hésite pas à revenir vers moi pour approfondir chaque point ou pour toute autre question, Quentin !*
+Projet MultiAgentIA
+Présentation du Projet
+Projet MultiAgentIA est une initiative visant à créer un système d’agents intelligents modulaires et collaboratifs. Chaque agent est spécialisé et capable de travailler seul ou en équipe pour accomplir des tâches complexes. Le but final est de permettre à un utilisateur de lancer une consigne en langage naturel (par exemple « code-moi un jeu ») et d'obtenir un résultat cohérent et de haute qualité, produit par la collaboration de plusieurs agents spécialisés​
+GITHUB.COM
+. Pour atteindre cet objectif, le projet met l’accent sur une architecture extrêmement modulaire et sur l’orchestration coopérative d’agents IA guidés par des rôles spécifiques. Chaque composant (agent, rôle, compétence, outil, etc.) est développé de manière isolée afin de pouvoir être étendu ou remplacé facilement, et les rôles des agents fournissent un contexte et des instructions qui influencent la génération des réponses de l’IA​
+GITHUB.COM
+. Le système intègre également des outils externes (comme des modèles de langage ou la recherche web) pour augmenter les capacités de chaque agent​
+GITHUB.COM
+, tout en permettant à l'utilisateur d'interagir simplement via des prompts en langage naturel.
+Architecture Générale du Système
+Le projet est structuré de façon à favoriser la modularité et la spécialisation des tâches. Les éléments clés de l’architecture comprennent :
+Agents et Rôles : Chaque agent hérite d’une classe de base commune et se voit attribuer un rôle spécifique (par ex. Scientifique, Climato-sceptique, Codeur, Réviseur, etc.)​
+GITHUB.COM
+. Le rôle apporte un contexte et des instructions propres à l’agent, ce qui façonne son comportement et sa manière de formuler les réponses. En pratique, le rôle d’un agent influence directement les prompts envoyés au modèle d’IA, de sorte que chaque agent s’exprime et réfléchit en accord avec sa personnalité ou spécialité assignée​
+GITHUB.COM
+​
+GITHUB.COM
+.
+Compétences (Skills) et Outils : Les agents disposent de modules de compétences internes qui encadrent leurs capacités, par exemple des compétences de communication, de raisonnement ou de gestion de mémoire, afin de traiter les messages et d’interagir avec des modèles IA externes​
+GITHUB.COM
+. En complément, chaque agent peut accéder à des outils spécifiques intégrés dans l’architecture (par exemple un outil d’appel au LLM ou un outil de recherche web) pour augmenter ses capacités​
+GITHUB.COM
+. L’architecture permet une injection dynamique de ces outils en fonction du contexte ou du rôle de l’agent​
+GITHUB.COM
+, ce qui signifie qu’on peut activer ou désactiver certains outils pour un agent sans modification profonde du code. Par exemple, un agent de rôle Chercheur pourrait disposer d’un outil de recherche internet activé pour trouver des informations en ligne.
+Mémoire à Court et Long Terme : Chaque agent possède sa propre mémoire. La mémoire court terme correspond au contexte de la session en cours (stocké en mémoire vive ou dans des structures temporaires), tandis que la mémoire long terme est persistante et stockée dans une base de données dédiée à l’agent​
+GITHUB.COM
+. Ainsi, un agent peut se souvenir de ses expériences passées via sa base de données personnelle. De plus, un registre global de bases de données est mis à disposition pour centraliser la gestion de ces mémoires persistantes​
+GITHUB.COM
+. Ce registre permet à n'importe quel agent (ou module du système) de créer et d’utiliser une nouvelle base de données au besoin, sans avoir à modifier l’architecture générale. En isolant les mémoires de chaque agent tout en offrant un point d’accès commun, on assure que les agents peuvent avoir des connaissances distinctes tout en facilitant l’extension (par exemple, ajouter une nouvelle base de connaissances spécialisée que plusieurs agents pourraient consulter).
+Communication Asynchrone par Messages : Les agents communiquent entre eux via un système de messages asynchrones centralisé, géré par une classe de communication. Concrètement, toute interaction entre agents (question, réponse, information, etc.) est encapsulée dans un objet Message enrichi de métadonnées (telles que l’origine, le destinataire, le type de message, son importance, etc.)​
+GITHUB.COM
+. Ce bus de communication unifié permet d’acheminer les échanges de façon naturelle vers les bons destinataires et de conserver un historique structuré de la conversation. Tous les échanges, y compris les pensées internes d’un agent, les instructions du système et les résultats fournis par les outils, transitent par des messages – même s’il s’agit de messages à usage interne qui ne sont pas destinés à être affichés directement. Par exemple, si un agent effectue une recherche web via un outil, la requête sera envoyée sous forme de message d’action, et la réponse de l’outil reviendra aussi sous forme de message, qui pourra ensuite être traité par les agents appropriés. La structure de la base de données de mémoire illustre cette conception : chaque entrée stocke notamment l’origine, le destinataire, le type de message (parole publique, pensée interne, action d’outil, etc.), le contenu et des indicateurs sur la nature du message (s’il doit être mémorisé, s’il fait partie du dialogue visible, etc.)​
+GITHUB.COM
+. Ce fonctionnement par messages unifiés assure une traçabilité totale des interactions et une flexibilité maximale dans l’orchestration. Par ailleurs, le contexte lié au rôle de l’agent est toujours pris en compte lors de la génération des messages : le système de communication intègre les instructions de rôle de l’agent émetteur afin que la réponse générée par le modèle de langage soit alignée sur le profil attendu de cet agent​
+GITHUB.COM
+. L’ensemble du mécanisme de communication a été conçu pour être asynchrone, permettant à chaque agent d’émettre ou de recevoir des messages sans bloquer le déroulement global (les agents peuvent ainsi “réfléchir” en parallèle et échanger de façon fluide).
+Feuille de Route Technique Priorisée
+Afin de continuer à améliorer le système et atteindre les objectifs fixés, plusieurs axes de développement prioritaires ont été identifiés :
+Intégration du Prompt Utilisateur dans toutes les Équipes (BaseTeam) : Actuellement, le module de débat permet de fournir un prompt utilisateur initial, mais l’objectif est de rendre ce mécanisme générique à n’importe quelle équipe d’agents. Il faut faire en sorte que l’appel d’une équipe dérivée de BaseTeam avec un prompt utilisateur (par exemple BaseTeam(agent1, agent2, "ma consigne")) diffuse automatiquement cette consigne à tous les agents de l’équipe et déclenche une interaction réelle et naturelle entre eux​
+GITHUB.COM
+. Concrètement, cela implique d’améliorer la logique de BaseTeam (et/ou de la classe de communication) pour qu’elle gère la distribution initiale du message du système/utilisateur vers tous les agents, puis d’orchestrer une boucle d’échange où chaque agent peut réagir tour à tour aux contributions des autres. Il faudra également veiller à ce que le champ de destinataire des messages ne soit plus figé (par exemple, précédemment tout pouvait être adressé à un "System"), mais permette de cibler un agent particulier ou l’ensemble de l’équipe selon le contexte​
+GITHUB.COM
+.
+Prompts intégrant le Rôle de l’Agent : Pour garantir la cohérence des réponses de chaque agent avec sa personnalité attendue, il est nécessaire d’intégrer systématiquement les instructions de son rôle dans les prompts envoyés au modèle de langage. En pratique, cela revient à améliorer le module de raisonnement (ou le mécanisme de génération de messages) pour qu’il combine le contenu à exprimer avec le contexte du rôle de l’agent avant d’appeler le LLM. Chaque prompt vers l’IA devrait ainsi inclure des indications implicites ou explicites sur qui parle (par ex. un scientifique prudent vs. un codeur enthousiaste) afin d’orienter la génération de la réponse. Cette tâche s’aligne avec le concept de base du projet selon lequel les rôles fournissent du contexte et des instructions spécifiques influençant la génération des prompts​
+GITHUB.COM
+, qu’il faut désormais appliquer de façon cohérente dans la mise en œuvre technique.
+Intégration Cohérente du Registre de Bases de Données : Bien que le registre global de bases de données soit prévu dans l’architecture, son utilisation doit être uniformisée et renforcée à travers tous les composants. Chaque agent doit pouvoir accéder à sa base de connaissances longue durée via ce registre, et créer de nouvelles bases si nécessaire, sans effort supplémentaire. Il faut donc veiller à ce que le workflow du système utilise le registre de DB de façon transparente – par exemple, lorsqu’un agent initialise sa mémoire persistante ou consulte une information, ces opérations doivent passer par les interfaces fournies par le registre plutôt que d’accéder directement à une base locale. Cela permettra d’éviter les redondances et d’assurer une gestion centralisée de toutes les données persistantes. En résumé, le rôle du registre de DB doit être clarifié et intégré de manière cohérente dans le fonctionnement du système​
+GITHUB.COM
+, de pair avec une possible rationalisation des modules existants liés à la mémoire (fusionner ou mieux distinguer ce qui relève de la compétence de gestion de DB vs. la mémoire long terme de l’agent, si ces notions se chevauchent).
+Activation des Outils via des Messages : Actuellement, les agents peuvent appeler des outils (comme le LLM ou la recherche web) mais il faut s’assurer que ce mécanisme s’intègre parfaitement dans le système de messages asynchrones. Chaque utilisation d’un outil par un agent devrait être déclenchée par l’envoi d’un message spécial (par exemple de type "action") décrivant l’outil à exécuter et ses paramètres. Ce message d’action serait intercepté par un composant gestionnaire d’outils qui effectue réellement l’appel externe (par exécuter la recherche web ou interroger le LLM) puis retourne le résultat sous la forme d’un nouveau message (par ex. de type "résultat") remis dans la file de messages des agents​
+GITHUB.COM
+. Ainsi, le cycle complet d’appel d’outil est tracé dans la conversation : l’agent émet une intention sous forme de message, l’outil produit une sortie, et cette sortie rentre dans la discussion comme n’importe quelle autre information. Cela nécessite de gérer les métadonnées adéquates (pour lier le résultat à l’action demandée, indiquer quel agent doit le recevoir, etc.), mais l’architecture de base (avec type_message, action, etc. dans la classe Message) est déjà pensée pour supporter ce genre d’extension. L’objectif est donc de finaliser cette intégration pour que les outils soient réellement utilisés de manière fluide en cours de dialogue, sans intervention manuelle. Par exemple, si un agent Codeur a accès à un outil d’exécution de code, il pourrait envoyer un message "action: exécute ce code" et recevoir en retour un message contenant la sortie du code, le tout automatiquement.
+Structuration de Teams Spécialisées : Au-delà de l’équipe de débat actuelle, le framework doit supporter facilement la création de nouvelles équipes d’agents spécialisées, en définissant leurs propres règles d’interaction. Pour cela, il convient de tirer parti de la classe de base BaseTeam pour factoriser le comportement commun, tout en permettant à des sous-classes (par ex. DebateTeam, CodeTeam, etc.) d’implémenter des logiques spécifiques​
+GITHUB.COM
+. Par exemple, une DebateTeam peut imposer un certain tour de parole entre deux agents aux opinions opposées, tandis qu’une CodeTeam (équipe où un agent Demandeur décrit un problème et un agent Codeur propose du code, avec éventuellement un Relecteur) suivra un schéma d’échange différent. La feuille de route prévoit de formaliser ces schémas en créant des classes d’équipes dédiées pour chaque contexte d’utilisation important, au lieu d’avoir une seule logique universelle. Chaque team spécialisée pourra ainsi encapsuler des règles métier propres, tout en réutilisant les mécanismes généraux de communication, de mémoire et d’outils fournis par l’infrastructure commune. Cette approche assurera une plus grande clarté du code et facilitera l’ajout de nouveaux types de collaborations multi-agents à l’avenir.
+Observabilité et Mode Débug : Enfin, pour accompagner le développement et l’utilisation du système, améliorer son observabilité est une priorité. Il s’agit d’ajouter des moyens de suivre et de comprendre ce qu’il se passe pendant les interactions entre agents. Par exemple, le système pourrait offrir un affichage plus intelligent des échanges (en distinguant les messages "internes" des messages "publics" présentés à l’utilisateur final), et conserver un historique horodaté des messages échangés pour pouvoir relire un scénario d’exécution. De plus, l’ajout de logs détaillés permettra de diagnostiquer le comportement des agents (chaque décision importante, chaque appel d’outil, etc. pouvant être journalisé). Un mode debug pourrait également être introduit, dans lequel les agents exposent davantage leurs pensées internes ou justifications (sous forme de messages de type spécial) afin de faciliter le prompt engineering et l’optimisation de leurs compétences. L’ensemble de ces améliorations visent à rendre le système plus transparent et plus facile à tester, afin d’accélérer son évolution tout en gardant le contrôle sur son fonctionnement.
+Conclusion
+En résumé, ce projet s’appuie sur une architecture ambitieuse où modularité est le maître-mot. Chaque composant — qu’il s’agisse d’un agent, d’un rôle, d’une compétence, d’un outil, d’une équipe ou d’un module de mémoire — est conçu pour rester indépendant des autres et pouvoir être adapté, étendu ou remplacé sans affecter l’ensemble du système​
+GITHUB.COM
+. Cette philosophie garantit qu’à mesure que le projet évolue, on peut intégrer de nouvelles fonctionnalités ou ajuster les comportements existants de façon souple, sans avoir à réécrire l’architecture de base. L’objectif final est de bâtir un écosystème d’agents coopératifs capable de résoudre des problèmes complexes de manière flexible et efficace, tout en restant simple à faire évoluer et à maintenir grâce à sa forte modularité.
