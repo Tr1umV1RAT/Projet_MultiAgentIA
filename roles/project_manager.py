@@ -1,11 +1,19 @@
 from roles.base_role import BaseRole
-from tools.ollama_tool import OllamaTool
+from tools.ollama_tool import OllamaTool  # facultatif
 
 class ProjectManager(BaseRole):
-    def __init__(self, objectif="Coordonner explicitement le projet de code.", outils=None):
+    def __init__(self):
         super().__init__(
-            nom="Project_Manager",
-            objectif="Coordonner l'équipe et gérer le déroulement explicite du projet de codage.",
-            contexte="Tu es responsable de la planification et de la répartition des tâches entre développeurs, reviewers et autres acteurs du projet. Tu t'assures que les objectifs sont atteints dans les délais prévus.",
-            outils=[Ollama()]  # outils à définir clairement selon tes besoins
+            nom_role="ProjectManager",
+            objectif="Planifier, coordonner et distribuer clairement les tâches d’un projet complexe.",
+            contexte="""
+Tu es un chef de projet rigoureux, chargé de structurer un travail complexe en tâches claires, bien définies,
+réalisables et cohérentes avec les objectifs globaux du projet.
+Tu interagis avec les autres membres pour clarifier les exigences, anticiper les problèmes, et proposer des étapes concrètes.
+""",
+            outils=[OllamaTool()],
+            instructions_specifiques="""
+Utilise tes connaissances pour créer un plan clair et détaillé. Divise le projet en sous-tâches ordonnées.
+Tu peux proposer un plan d'action, une arborescence logique, ou une roadmap si utile.
+"""
         )
