@@ -1,42 +1,47 @@
-import argparse
-import os
-from agents.base_agent import BaseAgent
-from roles.scientifique import Scientifique
-from roles.climato_sceptique import ClimatoSceptique
-from .base_team import BaseTeam
-from tools.web_search import WebSearchTool
+from teams.base_team import BaseTeam
 
 class DebateTeam(BaseTeam):
-    def __init__(self, nom, agents, schema_db, n_round=5, web=False, overwrite_db=False):
-        super().__init__(nom, agents, schema_db, n_round=n_round, web=web, overwrite_db=overwrite_db)
+    """
+    Classe dédiée pour orchestrer un débat contradictoire entre agents.
+    
+    Cette classe hérite de BaseTeam et peut être utilisée pour lancer
+    un débat où deux (ou plusieurs) agents aux rôles opposés échangent leurs arguments.
+    """
+    def __init__(self, nom_team: str, prompt_initial: str, agents, n_rounds: int = 5, verbose: bool = True,
+                 distribuer_prompt_initial: bool = True):
+        # Appel du constructeur de BaseTeam avec les valeurs par défaut souhaitées.
+        super().__init__(nom_team, agents, n_rounds, verbose, prompt_initial, distribuer_prompt_initial)
+        # Vérification simple pour s'assurer que les rôles semblent contradictoires.
+        role_names = [agent.role.nom_role for agent in self.agents if hasattr(agent, "role") and agent.role]
+        if len(set(role_names)) < 2:
+            print("Attention : Un débat contradictoire nécessite des rôles opposés.")
 
-    @classmethod
-    def from_cli(cls, schema_db):
-        parser = argparse.ArgumentParser(description="Initialise explicitement une équipe de débat.")
-        parser.add_argument("sujet", type=str, help="Sujet explicite du débat.")
-        parser.add_argument("-a", "--actors", type=str, default=None, help="Liste des rôles (séparés par virgules).")
-        parser.add_argument("--n_round", type=int, default=5, help="Nombre explicite de rounds.")
-        parser.add_argument("--web", action="store_true", help="Activation explicite de la recherche web.")
-        parser.add_argument("--overwrite_db", action="store_true", help="Écraser la DB existante explicitement.")
-        args = parser.parse_args()
-
-        roles_map = {"scientifique": Scientifique, "climato-sceptique": ClimatoSceptique}
-
-        agents = []
-        if args.actors:
-            noms_acteurs = args.actors.split(",")
-        else:
-            noms_acteurs = ["scientifique", "climato-sceptique"]
-
-        for nom_role in roles_map.keys():
-            if nom_role not in roles_map:
-                continue
-            role_instance = roles_map[nom_role]()
-            if args.web:
-                from tools.web_search import WebSearchTool
-                if "WebSearchTool" not in [outil.name for outil in role_instance.outils]:
-                    role_instance.outils.append(WebSearchTool())
-            agent = BaseAgent(nom_role.capitalize(), role_instance)
-            agents.append(agent)
-
-        return cls(args.sujet, agents, schema_db=schema_db, n_round=args.n_round, web=args.web, overwrite_db=args.overwrite_db)
+    def run(self):
+        """
+        Démarre le débat contradictoire.
+        
+        Ici, nous utilisons la logique standard de BaseTeam, mais on pourrait ajouter une
+        alternance stricte ou d'autres règles spécifiques aux débats contradictoires.
+        """
+        self.envoyer_consigne_team()
+        if self.verbose:
+            print(f"Débat contradictoire lancé pour l'équipe '{self.nom_team}' avec le prompt : {self.prompt_initial}")
+        
+        for tour in range(1, self.n_rounds + 1):
+            if self.verbose:
+                print(f"\n--- Tour {tour} ---")
+            for agent in self.agents:
+                if hasattr(agent, "process_messages"):
+                    agent.process_messages()
+                else:
+                    print(f"L'agent {agent} ne possède pas de méthode process_messages().")
+        if self.verbose:
+            print(f"\n*** Fin des {self.n_rounds} tours du débat contradictoire ***")
+    
+    def cloturer(self):
+        """
+        Termine le débat contradictoire et affiche l'historique complet des messages échangés.
+        """
+        print("\nHistorique complet du débat contradictoire :")
+        self.communication.afficher_messages_visibles()
+        print("Débat terminé.")
