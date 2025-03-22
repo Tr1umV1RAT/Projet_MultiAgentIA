@@ -3,7 +3,7 @@ from typing import List
 from tools.base_tool import BaseTool
 
 class BaseSkill(ABC):
-    def __init__(self, name: str, description: str = "", tools: List[BaseTool] = None):
+    def __init__(self, name: str, description: str = None, tools: List[BaseTool] = None):
         self.name = name
         self.description = description
         self.tools = tools or []

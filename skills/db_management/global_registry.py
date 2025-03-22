@@ -2,7 +2,7 @@ import os
 import sqlite3
 from datetime import datetime
 from skills.base_skill import BaseSkill
-
+from skills.communication.messages import Message
 
 class GlobalDBRegistry(BaseSkill):
     """
@@ -76,3 +76,9 @@ class GlobalDBRegistry(BaseSkill):
     def close(self):
         """Ferme la connexion proprement."""
         self.connexion.close()
+
+    def execute(self, message: Message):
+        """
+        Implémentation vide de execute() pour respecter l'interface BaseSkill.
+        """
+        print(f"[GlobalDBRegistry] Reçu un message non traité : {message}")

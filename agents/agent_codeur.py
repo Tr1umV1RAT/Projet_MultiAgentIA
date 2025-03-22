@@ -1,37 +1,42 @@
 from agents.base_agent import BaseAgent
+from roles.codeur import Codeur
 from skills.memory.short_term import ShortTermMemory
-from skills.communication import CommunicationSkill
-from skills.db_management import DBManager
-from messages import Message
-from skills.reasoning import Reasoning 
+from skills.memory.long_term import LongTermMemory
+from skills.communication.communication import Communication
+from skills.db_management.db_management import DBManagementSkill
+from skills.reasoning import Reasoning
+from skills.communication.messages import Message
+from config import Config
 import re
 import uuid
 
+
 class AgentCodeur(BaseAgent):
     def __init__(self, nom="AgentCodeur", role=None, memoire_persistante=None):
-        
-        if role is None:
-            from roles import codeur
-            role = Codeur()  # le rôle de base explicitement utilisé si aucun autre n'est fourni
-
-        super().__init__(
-            nom=nom,
-            role=role,
-            memoire_persistante=memoire_persistante or LongTermMemory("codeur_memory.db", Config.MEMORY_TABLE_SCHEMA)
+        role = role or Codeur()
+        self.memoire_court_terme = ShortTermMemory()
+        self.communication = Communication()
+        self.memoire_persistante = memoire_persistante or LongTermMemory(
+            db_name="codeur_memory.db",
+            schema=Config.MEMORY_TABLE_SCHEMA,
+            description="Mémoire persistante de l'agent codeur"
         )
+        self.db_skill = DBManagementSkill(db_name="codeur_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
 
-        
-        
+        skills = [self.memoire_court_terme, self.communication, self.db_skill, self.memoire_persistante]
+
+        super().__init__(name=nom, role=role, skills=skills)
+
     def process_message(self, message: Message) -> Message:
-        if not message or not isinstance(message.content, str):
-            return Message(
-                sender=self.nom,
-                recipient=message.sender,
-                content="Message non valide ou vide reçu. Merci de reformuler la tâche à effectuer.",
-                metadata={"error": "Invalid message"}
+        if not message or not isinstance(message.contenu, str):
+            return Message.create(
+                expediteur=self.name,
+                destinataire=message.expediteur,
+                contenu="Message non valide ou vide. Merci de reformuler.",
+                meta={"error": "invalid_message"},
+                dialogue=True
             )
 
-        # Prompt ultra strict pour la génération de code
         prompt = f""" 
 Tu es un codeur expert, rigoureux, et ton travail est destiné à être relu par un reviewer. Tu dois générer un code parfaitement documenté, propre, modulaire et testé. Voici les consignes strictes :
 
@@ -45,45 +50,47 @@ Tu es un codeur expert, rigoureux, et ton travail est destiné à être relu par
 8. Le code doit respecter les conventions PEP8.
 
 Tâche reçue :
-{message.content}
+{message.contenu}
 """
 
-        generated_code =  Reasoning(prompt)# À remplacer par llm_adapter.call(prompt)
+        llm_input = Message.create(
+            expediteur=self.name,
+            destinataire=self.name,
+            contenu=prompt,
+            meta={"instruction": "code_request"}
+        )
 
-        # Extraction du code et nom de fichier
+        result = self.reasoning.reflechir(llm_input)
+        generated_code = result.contenu
+
         code_block = re.search(r"```python\n(.*?)```", generated_code, re.DOTALL)
         filename_line = re.search(r"# fichier: (.*?\.py)", generated_code)
 
         code_cleaned = code_block.group(1).strip() if code_block else generated_code
         filename = filename_line.group(1) if filename_line else f"{uuid.uuid4().hex[:8]}.py"
 
-        # Sauvegarde dans la base
-        db = self.get_skill(DBManager)
-        db.store_message({
-            "type": "code",
-            "filename": filename,
-            "content": code_cleaned,
-            "task": message.content,
-            "author": self.nom
-        })
-
-        return Message(
-            sender=self.nom,
-            recipient=message.sender,
-            content=f"Code généré et stocké sous le nom {filename}.",
-            metadata={"filename": filename}
+        # Sauvegarde dans DB
+        self.db_skill.save_message(
+            Message.create(
+                expediteur=self.name,
+                destinataire="Archiviste",
+                contenu=code_cleaned,
+                meta={
+                    "type_message": "code",
+                    "filename": filename,
+                    "task": message.contenu,
+                    "action": "save_code",
+                    "importance": 1,
+                    "memoriser": True
+                },
+                dialogue=False
+            )
         )
 
-    def _mock_llm(self, prompt: str) -> str:
-        # Simulation temporaire pour dev
-        return (
-            "# fichier: mon_script.py\n"
-            "```python\n"
-            "def dire_bonjour(nom):\n"
-            "    \"\"\"\n"
-            "    Affiche un message de salutation personnalisé.\n"
-            "    :param nom: str - le nom de la personne à saluer\n"
-            "    \"\"\"\n"
-            "    print(f\"Bonjour, {nom} !\")\n"
-            "```"
+        return Message.create(
+            expediteur=self.name,
+            destinataire=message.expediteur,
+            contenu=f"Code généré et sauvegardé sous le nom {filename}.",
+            meta={"filename": filename},
+            dialogue=True
         )

@@ -3,6 +3,7 @@ import os
 from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
 from skills.db_management.global_registry import GlobalDBRegistry
+from config import Config
 
 class DBManagementSkill(BaseSkill):
     def __init__(self, db_name="default_memory.db", schema=None, overwrite=False, adapt_name_if_exists=True):
@@ -11,17 +12,19 @@ class DBManagementSkill(BaseSkill):
         self.connexion = sqlite3.connect(self.db_name)
         self.cursor = self.connexion.cursor()
 
-        if schema:
-            self.init_schema(schema)
+        if not schema:
+            schema = Config.MEMORY_TABLE_SCHEMA
+        self.init_schema(schema)
 
-        # Enregistre explicitement chaque DB créée
         self.global_registry = GlobalDBRegistry()
-        self.global_registry.register_db(
-            self.db_name, description=f"Base créée pour {self.db_name}"
+        self.global_registry.register_database(
+            db_name=self.db_name,
+            db_path=os.path.abspath(self.db_name),
+            agent_or_team="unknown",
+            description=f"Base créée pour {self.db_name}"
         )
 
     def _prepare_db_name(self, db_name, overwrite, adapt_name_if_exists):
-        """Gestion claire des conflits ou écrasement de DB existantes."""
         base, ext = os.path.splitext(db_name)
         if os.path.exists(db_name):
             if overwrite:
@@ -40,30 +43,30 @@ class DBManagementSkill(BaseSkill):
         return db_name
 
     def init_schema(self, schema):
-        """Initialisation explicite du schéma SQL."""
         self.cursor.execute(schema)
         self.connexion.commit()
 
     def save_message(self, message: Message):
         self.cursor.execute(
-            "INSERT INTO memory (origine, destinataire, type_message, contenu, importance, memoriser, dialogue, action, affichage_force) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO memory (origine, destinataire, type_message, contenu, importance, memoriser, dialogue, action, affichage_force)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             (
-                message.origine,
+                message.expediteur,
                 message.destinataire,
-                message.type_message,
+                message.meta.get("type_message"),
                 message.contenu,
-                message.importance,
-                message.memoriser,
+                message.meta.get("importance", 0),
+                message.meta.get("memoriser", True),
                 message.dialogue,
-                message.action,
+                message.meta.get("action"),
                 message.affichage_force
             )
         )
         self.connexion.commit()
 
-
     def recall_messages(self, destinataire=None, type_message=None, limit=10):
-        """Récupération claire et flexible des messages."""
         query = "SELECT * FROM memory WHERE 1=1"
         params = []
         if destinataire:
@@ -72,11 +75,27 @@ class DBManagementSkill(BaseSkill):
         if type_message:
             query += " AND type_message=?"
             params.append(type_message)
-        query += " ORDER BY date DESC LIMIT ?"
+        query += " ORDER BY timestamp DESC LIMIT ?"
         params.append(limit)
 
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
+
+    def execute(self, message: Message):
+        """
+        Méthode requise par BaseSkill. Par défaut, elle enregistre le message.
+        Elle pourrait être étendue à d'autres actions via message.meta['action'].
+        """
+        action = message.meta.get("action", "save")
+        if action == "save":
+            self.save_message(message)
+        elif action == "recall":
+            return self.recall_messages(
+                destinataire=message.destinataire,
+                type_message=message.meta.get("type_message")
+            )
+        else:
+            print(f"⚠️ Action inconnue '{action}' pour DBManagementSkill")
 
     def close(self):
         self.connexion.close()

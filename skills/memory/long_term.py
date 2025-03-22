@@ -3,28 +3,36 @@ from skills.base_skill import BaseSkill
 from skills.communication.messages import Message  # <- Import ajouté ici clairement !
 
 class LongTermMemory(BaseSkill):
-    def __init__(self, db_name="memory.db"):
+    def __init__(self, db_name="memory.db", schema=None, description=None):
         super().__init__("LongTermMemory")
         self.connexion = sqlite3.connect(db_name)
         self.cursor = self.connexion.cursor()
-        self.init_table()
+        self.db_name = db_name
 
-    def init_table(self):
-        self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS memory (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            origine TEXT,
-            destinataire TEXT,
-            type_message TEXT,
-            contenu TEXT,
-            importance INTEGER,
-            memoriser BOOLEAN,
-            dialogue BOOLEAN,
-            action TEXT,
-            affichage_force BOOLEAN,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
+        if schema:
+            self.init_table(schema)
+        else:
+            self.init_table()  # Par défaut
+
+    def init_table(self, schema=None):
+        if schema:
+            self.cursor.execute(schema)
+        else:
+            self.cursor.execute("""  -- le fallback actuel
+            CREATE TABLE IF NOT EXISTS memory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                origine TEXT,
+                destinataire TEXT,
+                type_message TEXT,
+                contenu TEXT,
+                importance INTEGER,
+                memoriser BOOLEAN,
+                dialogue BOOLEAN,
+                action TEXT,
+                affichage_force BOOLEAN,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
         self.connexion.commit()
 
     def save(self, message: Message):
@@ -58,3 +66,6 @@ class LongTermMemory(BaseSkill):
 
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
+    def execute(self, message: Message):
+        self.save(message)
+
