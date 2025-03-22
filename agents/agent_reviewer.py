@@ -4,23 +4,25 @@ from skills.communication.communication import Communication
 from skills.db_management.db_management import DBManagementSkill
 from skills.reasoning import Reasoning
 from config import Config
-from messages import Message
+from skills.communication.messages import Message
 from roles.reviewer import ReviewerRole
 
 
 class AgentReviewer(BaseAgent):
     def __init__(self, nom="AgentReviewer", role=None, memoire_persistante=None):
         role = role or ReviewerRole()
-        super().__init__(
-            name=nom,
-            role=role,
-            memoire_persistante=memoire_persistante,
-            skills=[
-                ShortTermMemory(),
-                Communication(verbose=Config.VERBOSE_COMMUNICATION),
-                DBManagementSkill(db_name=f"{nom.lower()}_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
-            ]
+        self.memoire_court_terme = ShortTermMemory()
+        self.communication = Communication()
+        self.memoire_persistante = memoire_persistante or LongTermMemory(
+            db_name="rewiever_memory.db",
+            schema=Config.MEMORY_TABLE_SCHEMA,
+            description="Mémoire persistante de l'agent rewiever"
         )
+        self.db_skill = DBManagementSkill(db_name="rewiever_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
+
+        skills = [self.memoire_court_terme, self.communication, self.db_skill, self.memoire_persistante]
+
+        super().__init__(name=nom, role=role, skills=skills)
 
     def process_message(self, message: Message) -> Message:
         if not message or not isinstance(message.contenu, str):

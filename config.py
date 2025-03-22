@@ -5,7 +5,8 @@ VERBOSE_COMMUNICATION = False
 # Valeur par défaut pour l'attribut affichage_force des messages
 DEFAULT_AFFICHAGE_FORCE = False
 class Config:
-    
+    VERBOSE_COMMUNICATION = False
+    DEFAULT_AFFICHAGE_FORCE = False
     LLM_PROVIDER = "ollama"       # Nom du fournisseur LLM à utiliser (ex: 'ollama', 'openai')
     LLM_MODEL = "mistral"         # Modèle spécifique du LLM (ex: 'llama2', 'codellama', 'gpt-4')
     LLM_ENDPOINT = "http://localhost:11434"  # Endpoint du LLM (ex: 'http://localhost:11434' pour Ollama)
