@@ -106,7 +106,13 @@ Pour lancer un débat contradictoire entre deux agents aux rôles opposés, exé
 ```bash
 git clone https://github.com/Tr1umV1RAT/Projet_MultiAgentIA.git
 cd Projet_MultiAgentIA
-python debate.py "le réchauffement climatique"
+python exemples/debate.py "le réchauffement climatique"
+```
+Sous Windows, dans le cas ou les packages du projet ne serait pas référencés, mettez vous simplement à la base du projet, ouvrez la console et entrez :
+
+```bash
+set PYTHONPATH=%cd%
+
 ```
 
 Ce script instancie deux agents (par exemple, Alice avec un rôle scientifique et Bob avec un rôle climato-sceptique) et lance une discussion interactive sur le thème fourni.  
