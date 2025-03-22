@@ -1,7 +1,7 @@
 from roles.base_role import BaseRole
 from tools.llm_adapter import LLMAdapterTool
 
-class CodeurBasique(BaseRole):
+class CodeurRole(BaseRole):
     def __init__(self):
         super().__init__(
             nom_role="CodeurBasique",

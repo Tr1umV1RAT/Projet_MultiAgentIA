@@ -1,7 +1,7 @@
 from roles.base_role import BaseRole
 from tools.llm_adapter import LLMAdapterTool
 
-class ProjectManager(BaseRole):
+class ProjectManagerRole(BaseRole):
     def __init__(self):
         super().__init__(
             nom_role="ProjectManager",
