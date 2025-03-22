@@ -1,87 +1,64 @@
 import argparse
-import os
-import sys
-import json
 from agents.base_agent import BaseAgent
-from teams.base_team import BaseTeam
+from base_team import BaseTeam
 from roles.project_manager import ProjectManagerRole
 from roles.codeur import CodeurRole
 from roles.reviewer import ReviewerRole
-from roles.designer import DesignerRole
-from roles.narrator import NarratorRole
-from skills.communication import CommunicationSkill
-from skills.db_management import DBManagementSkill
-from skills.memory.long_term import LongTermMemorySkill
-from utils.project_io import create_project_dir, save_project_state, load_project_state
+from roles.project_designer import ProjectDesignerRole
+from roles.narrator import NarratorRole  # à créer si besoin
+from tools.project_io import create_project_dir, save_project_state, load_project_state
 
 
 class CodeTeam(BaseTeam):
-    def __init__(self, name, agents, project_path, n_round=5):
-        super().__init__(name=name, agents=agents, n_round=n_round)
-        self.project_path = project_path
+    def __init__(self, prompt, name=None, n_round=5, use_reviewer=True, use_test=False, use_narrator=False):
+        self.name = name or f"code_project_{prompt[:10].replace(' ', '_')}"
+        self.project_path = create_project_dir(self.name)
+        self.use_reviewer = use_reviewer
+        self.use_test = use_test
+        self.use_narrator = use_narrator
 
-    def save_state(self):
-        save_project_state(self, self.project_path)
+        agents = [
+            BaseAgent("Project Manager", ProjectManagerRole()),
+            BaseAgent("Codeur", CodeurRole()),
+            BaseAgent("Project Designer", ProjectDesignerRole())
+        ]
+        if use_reviewer:
+            agents.append(BaseAgent("Reviewer", ReviewerRole()))
+        if use_narrator:
+            agents.append(BaseAgent("Narrator", NarratorRole()))
 
-    def load_state(self):
-        data = load_project_state(self.project_path)
-        # Implémenter la restauration des agents, messages, etc...
-        # Placeholder pour l'instant
-        pass
+        super().__init__(agents=agents, prompt=prompt, n_round=n_round)
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Lance une CodeTeam pour réaliser un projet de code collaboratif.")
-    parser.add_argument("prompt", type=str, help="Description du projet")
-    parser.add_argument("--n_round", type=int, default=5, help="Nombre de rounds")
-    parser.add_argument("--no-review", action="store_true", help="Désactive le reviewer")
-    parser.add_argument("--test", action="store_true", help="Active les tests automatiques")
-    parser.add_argument("--narrator", action="store_true", help="Ajoute un narrateur")
-    parser.add_argument("--name", type=str, help="Nom du projet (facultatif)")
-    parser.add_argument("--load", type=str, help="Chemin vers un projet existant à charger")
-    return parser.parse_args()
-
-
-def build_agents(args):
-    agents = []
-
-    pm = BaseAgent(name="Manager", role=ProjectManagerRole(), skills=[CommunicationSkill(), DBManagementSkill(), LongTermMemorySkill()])
-    agents.append(pm)
-
-    designer = BaseAgent(name="Designer", role=DesignerRole(), skills=[CommunicationSkill(), DBManagementSkill(), LongTermMemorySkill()])
-    agents.append(designer)
-
-    codeur = BaseAgent(name="Codeur", role=CodeurRole(), skills=[CommunicationSkill(), DBManagementSkill(), LongTermMemorySkill()])
-    agents.append(codeur)
-
-    if not args.no_review:
-        reviewer = BaseAgent(name="Reviewer", role=ReviewerRole(), skills=[CommunicationSkill(), DBManagementSkill(), LongTermMemorySkill()])
-        agents.append(reviewer)
-
-    if args.narrator:
-        narrator = BaseAgent(name="Narrateur", role=NarratorRole(), skills=[CommunicationSkill(), DBManagementSkill(), LongTermMemorySkill()])
-        agents.append(narrator)
-
-    return agents
-
-
-def main():
-    args = parse_args()
-
-    if args.load:
-        project_path = args.load
-        code_team = load_project_state(project_path)
-        code_team.run()
-        return
-
-    name = args.name if args.name else args.prompt.replace(" ", "_")[:30]
-    project_path = create_project_dir(name)
-
-    agents = build_agents(args)
-    code_team = CodeTeam(name=name, agents=agents, project_path=project_path, n_round=args.n_round)
-    code_team.run()
-    code_team.save_state()
+    def run(self):
+        print(f"[+] Lancement du projet: {self.name} ({self.n_round} tours)")
+        for i in range(self.n_round):
+            print(f"[Tour {i+1}/{self.n_round}]")
+            self.step()
+            save_project_state(self, self.project_path)
+        print("[+] Projet terminé")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Lancer une CodeTeam IA collaborative")
+    parser.add_argument("prompt", type=str, help="Objectif initial du projet (ex: 'Créer un jeu')")
+    parser.add_argument("--n_round", type=int, default=5, help="Nombre de tours d'interaction")
+    parser.add_argument("--name", type=str, help="Nom du projet (répertoire)")
+    parser.add_argument("--no-review", action="store_true", help="Désactiver le reviewer")
+    parser.add_argument("--test", action="store_true", help="Activer le mode test")
+    parser.add_argument("--narrator", action="store_true", help="Activer le narrateur")
+    parser.add_argument("--load", type=str, help="Charger un projet existant depuis un chemin")
+    args = parser.parse_args()
+
+    if args.load:
+        team = load_project_state(args.load)
+        team.run()
+    else:
+        team = CodeTeam(
+            prompt=args.prompt,
+            name=args.name,
+            n_round=args.n_round,
+            use_reviewer=not args.no_review,
+            use_test=args.test,
+            use_narrator=args.narrator
+        )
+        team.run()
