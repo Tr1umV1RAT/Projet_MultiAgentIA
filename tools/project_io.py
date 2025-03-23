@@ -34,3 +34,11 @@ def load_project_state(path: str):
         team_instance = pickle.load(f)
     print(f"📦 Projet restauré depuis {filepath}")
     return team_instance
+
+def save_code_file(filename: str, code: str, project_path: str):
+    if not os.path.exists(project_path):
+        os.makedirs(project_path)
+    file_path = os.path.join(project_path, filename)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(code)
+    print(f"[INFO] Code sauvegardé dans : {file_path}")

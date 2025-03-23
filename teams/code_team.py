@@ -22,14 +22,16 @@ class CodeTeam(BaseTeam):
 
         # Instanciation des agents spécialisés
         agents = [
-            AgentProjectManager(),
-            AgentCodeur(),
-            AgentProjectDesigner()
-        ]
-        if use_reviewer:
-            agents.append(AgentReviewer())
+                    AgentProjectManager(verbose=verbosity_level),
+                    AgentProjectDesigner(verbose=verbosity_level),
+                    AgentCodeur(project_path=self.project_path, verbose=verbosity_level)
+        ]              
         if use_narrator:
-            agents.append(AgentNarrativeDesigner())
+                   agents.append(AgentNarrativeDesigner(verbose=verbosity_level))
+
+        if use_reviewer:
+            agents.append(AgentReviewer(verbose=verbosity_level))
+    
 
         # On passe aux paramètres attendus par BaseTeam : nom_team, agents, n_rounds, verbose, prompt_initial
         super().__init__(nom_team=self.nom_team, agents=agents, n_rounds=n_rounds, verbose=verbose, prompt_initial=prompt)

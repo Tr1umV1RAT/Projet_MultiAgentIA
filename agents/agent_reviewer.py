@@ -1,4 +1,5 @@
-import re
+# agents/agent_reviewer.py
+
 from agents.base_agent import BaseAgent
 from roles.reviewer import ReviewerRole
 from skills.memory.short_term import ShortTermMemory
@@ -10,23 +11,21 @@ from config import Config
 from skills.communication.messages import Message
 
 class AgentReviewer(BaseAgent):
-    def __init__(self, nom="AgentReviewer", role=None, memoire_persistante=None):
+    def __init__(self, nom="AgentReviewer", role=None, memoire_persistante=None, verbose=False):
         role = role or ReviewerRole()
         self.memoire_court_terme = ShortTermMemory()
-        self.communication = Communication()
+        self.communication = Communication(verbose=verbose)
         self.memoire_persistante = memoire_persistante or LongTermMemory(
             db_name="reviewer_memory.db",
             schema=Config.MEMORY_TABLE_SCHEMA,
             description="Mémoire persistante de l'agent reviewer"
         )
-        # Partage de la même connexion SQLite
-        self.db_skill = DBManagementSkill(
-            db_name="reviewer_memory.db",
-            schema=Config.MEMORY_TABLE_SCHEMA,
-            connexion=self.memoire_persistante.connexion
-        )
+        self.db_skill = DBManagementSkill(db_name="reviewer_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
         skills = [self.memoire_court_terme, self.communication, self.db_skill, self.memoire_persistante]
-        super().__init__(name=nom, role=role, skills=skills)
+        super().__init__(name=nom, role=role, skills=skills, verbose=verbose)
+        self.reasoning = Reasoning(self)
+        if self.verbose:
+            print(f"[{self.name} INIT] Agent Reviewer initialisé en mode verbeux.")
 
     def process_message(self, message: Message) -> Message:
         if not message or not isinstance(message.contenu, str):
@@ -40,8 +39,8 @@ class AgentReviewer(BaseAgent):
         prompt = f"""
 Tu es un reviewer professionnel. Voici les critères d'évaluation :
 
-1. Clarté du code ou contenu fourni.
-2. Respect des consignes du prompt.
+1. Clarté du code ou du contenu fourni.
+2. Respect des consignes.
 3. Qualité de la documentation (docstrings, nommage clair, etc.).
 4. Cohérence fonctionnelle.
 5. Améliorations possibles.
@@ -70,3 +69,4 @@ Travail à analyser :
             meta={},
             dialogue=True
         )
+

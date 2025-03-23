@@ -1,5 +1,5 @@
 # agents/agent_narrative_designer.py
-import re
+
 from agents.base_agent import BaseAgent
 from roles.narrative_designer import NarrativeDesignerRole
 from skills.memory.short_term import ShortTermMemory
@@ -8,25 +8,25 @@ from skills.communication.communication import Communication
 from skills.db_management.db_management import DBManagementSkill
 from config import Config
 from skills.communication.messages import Message
+from skills.reasoning import Reasoning
 
 class AgentNarrativeDesigner(BaseAgent):
-    def __init__(self, nom="AgentNarrativeDesigner", role=None, memoire_persistante=None):
+    def __init__(self, nom="AgentNarrativeDesigner", role=None, memoire_persistante=None, verbose=False):
         role = role or NarrativeDesignerRole()
         self.memoire_court_terme = ShortTermMemory()
-        self.communication = Communication()
+        self.communication = Communication(verbose=verbose)
         self.memoire_persistante = memoire_persistante or LongTermMemory(
             db_name="narrative_designer_memory.db",
             schema=Config.MEMORY_TABLE_SCHEMA,
             description="Mémoire persistante pour le design narratif"
         )
-        self.db_skill = DBManagementSkill(
-            db_name="narrative_designer_memory.db",
-            schema=Config.MEMORY_TABLE_SCHEMA,
-            connexion=self.memoire_persistante.connexion
-        )
+        self.db_skill = DBManagementSkill(db_name="narrative_designer_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
         skills = [self.memoire_court_terme, self.communication, self.db_skill, self.memoire_persistante]
-        super().__init__(name=nom, role=role, skills=skills)
-    
+        super().__init__(name=nom, role=role, skills=skills, verbose=verbose)
+        self.reasoning = Reasoning(self)
+        if self.verbose:
+            print(f"[{self.name} INIT] Agent NarrativeDesigner initialisé en mode verbeux.")
+
     def process_message(self, message: Message) -> Message:
         if not message or not isinstance(message.contenu, str):
             return Message.create(
@@ -69,3 +69,4 @@ Contexte / Commande :
             meta={"instruction": "narrative_generation"},
             dialogue=True
         )
+
