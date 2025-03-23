@@ -1,5 +1,6 @@
 from agents.base_agent import BaseAgent
 from skills.memory.short_term import ShortTermMemory
+from skills.memory.long_term import LongTermMemory
 from skills.communication.communication import Communication
 from skills.db_management.db_management import DBManagementSkill
 from skills.reasoning import Reasoning

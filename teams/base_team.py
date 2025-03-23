@@ -100,3 +100,9 @@ class BaseTeam:
         print("\nHistorique complet de la discussion :")
         self.communication.afficher_messages_visibles()
         print("Discussion terminée.")
+
+
+    def step(self):
+        for agent in self.agents:
+            if hasattr(agent, "process_messages"):
+                agent.process_messages()

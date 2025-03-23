@@ -82,3 +82,11 @@ class GlobalDBRegistry(BaseSkill):
         Implémentation vide de execute() pour respecter l'interface BaseSkill.
         """
         print(f"[GlobalDBRegistry] Reçu un message non traité : {message}")
+
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Supprimer les objets non pickle-ables
+        del state["connexion"]
+        del state["cursor"]
+        return state

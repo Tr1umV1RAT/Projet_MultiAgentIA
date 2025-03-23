@@ -69,3 +69,9 @@ class LongTermMemory(BaseSkill):
     def execute(self, message: Message):
         self.save(message)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Supprimer les objets non pickle-ables
+        del state["connexion"]
+        del state["cursor"]
+        return state

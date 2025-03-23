@@ -1,12 +1,12 @@
 
 # Paramètre global pour contrôler l'affichage des messages (mode debug/verbose)
-VERBOSE_COMMUNICATION = False
+VERBOSE_COMMUNICATION = True
 
 # Valeur par défaut pour l'attribut affichage_force des messages
-DEFAULT_AFFICHAGE_FORCE = False
+DEFAULT_AFFICHAGE_FORCE = True
 class Config:
-    VERBOSE_COMMUNICATION = False
-    DEFAULT_AFFICHAGE_FORCE = False
+    VERBOSE_COMMUNICATION = True
+    DEFAULT_AFFICHAGE_FORCE = True
     LLM_PROVIDER = "ollama"       # Nom du fournisseur LLM à utiliser (ex: 'ollama', 'openai')
     LLM_MODEL = "mistral"         # Modèle spécifique du LLM (ex: 'llama2', 'codellama', 'gpt-4')
     LLM_ENDPOINT = "http://localhost:11434"  # Endpoint du LLM (ex: 'http://localhost:11434' pour Ollama)
