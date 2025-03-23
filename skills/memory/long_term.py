@@ -1,24 +1,36 @@
+# skills/memory/long_term.py
+
 import sqlite3
+import os
 from skills.base_skill import BaseSkill
-from skills.communication.messages import Message  # <- Import ajouté ici clairement !
+from skills.communication.messages import Message
 
 class LongTermMemory(BaseSkill):
     def __init__(self, db_name="memory.db", schema=None, description=None):
         super().__init__("LongTermMemory")
+        self.db_name = db_name
         self.connexion = sqlite3.connect(db_name)
         self.cursor = self.connexion.cursor()
-        self.db_name = db_name
-
         if schema:
             self.init_table(schema)
         else:
-            self.init_table()  # Par défaut
-
+            self.init_table()
+        if description:
+            # Enregistrer la DB dans le registre global si besoin
+            from skills.db_management.global_registry import GlobalDBRegistry
+            registry = GlobalDBRegistry()
+            registry.register_database(
+                db_name=db_name,
+                db_path=os.path.abspath(db_name),
+                agent_or_team="unknown",
+                description=description
+            )
+    
     def init_table(self, schema=None):
         if schema:
             self.cursor.execute(schema)
         else:
-            self.cursor.execute("""  -- le fallback actuel
+            self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS memory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 origine TEXT,
@@ -41,17 +53,17 @@ class LongTermMemory(BaseSkill):
             (
                 message.origine,
                 message.destinataire,
-                message.type_message,
+                message.meta.get("type_message"),
                 message.contenu,
                 message.importance,
-                message.memoriser,
+                message.meta.get("memoriser", True),
                 message.dialogue,
-                message.action,
+                message.meta.get("action"),
                 message.affichage_force
             )
         )
         self.connexion.commit()
-
+    
     def recall(self, destinataire=None, type_message=None, limit=10):
         query = "SELECT * FROM memory WHERE 1=1"
         params = []
@@ -63,15 +75,31 @@ class LongTermMemory(BaseSkill):
             params.append(type_message)
         query += " ORDER BY date DESC LIMIT ?"
         params.append(limit)
-
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
+
+    def close(self):
+        self.connexion.close()
+
     def execute(self, message: Message):
+        """
+        Implémentation minimale pour satisfaire BaseSkill.
+        Ici, on se contente de sauvegarder le message.
+        """
         self.save(message)
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        # Supprimer les objets non pickle-ables
-        del state["connexion"]
-        del state["cursor"]
+        # Supprimer les objets non sérialisables
+        if 'connexion' in state:
+            del state['connexion']
+        if 'cursor' in state:
+            del state['cursor']
         return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Rétablir la connexion SQLite après le chargement
+        self.connexion = sqlite3.connect(self.db_name)
+        self.cursor = self.connexion.cursor()
+        self.init_table()

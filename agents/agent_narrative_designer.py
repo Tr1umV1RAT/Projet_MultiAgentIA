@@ -1,5 +1,5 @@
 # agents/agent_narrative_designer.py
-
+import re
 from agents.base_agent import BaseAgent
 from roles.narrative_designer import NarrativeDesignerRole
 from skills.memory.short_term import ShortTermMemory
@@ -8,7 +8,6 @@ from skills.communication.communication import Communication
 from skills.db_management.db_management import DBManagementSkill
 from config import Config
 from skills.communication.messages import Message
-
 
 class AgentNarrativeDesigner(BaseAgent):
     def __init__(self, nom="AgentNarrativeDesigner", role=None, memoire_persistante=None):
@@ -20,21 +19,23 @@ class AgentNarrativeDesigner(BaseAgent):
             schema=Config.MEMORY_TABLE_SCHEMA,
             description="Mémoire persistante pour le design narratif"
         )
-        self.db_skill = DBManagementSkill(db_name="narrative_designer_memory.db", schema=Config.MEMORY_TABLE_SCHEMA)
-
+        self.db_skill = DBManagementSkill(
+            db_name="narrative_designer_memory.db",
+            schema=Config.MEMORY_TABLE_SCHEMA,
+            connexion=self.memoire_persistante.connexion
+        )
         skills = [self.memoire_court_terme, self.communication, self.db_skill, self.memoire_persistante]
-
         super().__init__(name=nom, role=role, skills=skills)
-
+    
     def process_message(self, message: Message) -> Message:
         if not message or not isinstance(message.contenu, str):
             return Message.create(
                 expediteur=self.name,
                 destinataire=message.expediteur,
                 contenu="Message non valide reçu. Fournis-moi un thème ou un univers pour construire le scénario.",
-                meta={"error": "invalid_input"}
+                meta={"error": "invalid_input"},
+                dialogue=True
             )
-
         prompt = f"""
 Tu es un expert en design narratif. Tu dois créer une structure scénaristique cohérente, immersive et motivante.
 Respecte ces éléments :
@@ -47,26 +48,24 @@ Respecte ces éléments :
 Contexte / Commande :
 {message.contenu}
 """
-
         msg_llm = Message.create(
             expediteur=self.name,
             destinataire=self.name,
             contenu=prompt,
             meta={"instruction": "narrative_generation"}
         )
-
         result = self.reasoning.reflechir(msg_llm)
-
         self.db_skill.save_message(Message.create(
             expediteur=self.name,
             destinataire=message.expediteur,
             contenu=result.contenu,
-            meta={"type_message": "narration"}
+            meta={"type_message": "narration"},
+            dialogue=False
         ))
-
         return Message.create(
             expediteur=self.name,
             destinataire=message.expediteur,
             contenu=f"Scénario proposé :\n\n{result.contenu}",
+            meta={"instruction": "narrative_generation"},
             dialogue=True
         )

@@ -24,7 +24,8 @@ class Config:
         importance INTEGER,
         memoriser BOOLEAN,
         dialogue BOOLEAN,
-        affichage_force BOOLEAN,
         action TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );"""
+        affichage_force BOOLEAN,
+        version_finale BOOLEAN DEFAULT 0,  -- 0 = temporaire, 1 = définitive
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );"""
