@@ -1,3 +1,4 @@
+# skills/ollama_adapter.py
 from config import Config
 from tools.base_tool import BaseTool
 import requests
@@ -38,7 +39,6 @@ class LLMAdapterTool(BaseTool):
             # Préparation des messages pour l'API ChatCompletion
             messages = []
             if "Question:" in prompt_text:
-                # Séparer le contexte et la question pour les messages system/user
                 idx = prompt_text.rfind("Question:")
                 system_content = prompt_text[:idx].strip()
                 user_question = prompt_text[idx+len("Question:"):].strip()
@@ -47,7 +47,6 @@ class LLMAdapterTool(BaseTool):
                 messages.append({"role": "user", "content": user_question})
             else:
                 messages.append({"role": "user", "content": prompt_text})
-            # Appel de l'API OpenAI avec les messages
             response = openai.ChatCompletion.create(model=model_name, messages=messages)
             return response.choices[0].message.content.strip()
         else:

@@ -1,18 +1,15 @@
-from abc import ABC, abstractmethod
-from typing import List
-from tools.base_tool import BaseTool
+# skills/base_skill.py
 
-class BaseSkill(ABC):
-    def __init__(self, name: str, description: str = None, tools: List[BaseTool] = None):
-        self.name = name
-        self.description = description
-        self.tools = tools or []
 
-    @abstractmethod
-    def execute(self, prompt: str) -> str:
+class BaseSkill:
+    def __init__(self, agent=None, verbose=False):
+        self.agent = agent
+        self.verbose = verbose
+
+    def execute(self, *args, **kwargs):
         """
-        Méthode à implémenter par chaque compétence spécifique.
-        :param prompt: Le texte d'entrée pour la compétence.
-        :return: La réponse générée par la compétence.
+        Méthode à implémenter par toutes les sous-classes.
+        Elle doit contenir la logique principale du skill.
         """
-        pass
+        raise NotImplementedError("La méthode execute() doit être implémentée dans la sous-classe.")
+
