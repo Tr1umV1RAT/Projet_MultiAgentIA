@@ -1,30 +1,47 @@
 # skills/reasoning.py
-from tools.llm_adapter import LLMAdapterTool
-from skills.communication.messages import Message
-from skills.base_skill import BaseSkill
 
+from skills.base_skill import BaseSkill
+from skills.communication.messages import Message
+from tools.llm_adapter import LLMAdapterTool
 
 class Reasoning(BaseSkill):
-    def __init__(self, agent, adapter, verbose=False):
-        super().__init__(agent=agent, verbose=verbose)
-        self.adapter = adapter
+    def __init__(self, agent, verbose=False):
+        self.agent = agent
+        self.verbose = verbose
 
-    def reflechir(self, input_message):
-        historique = ""
-        if hasattr(self.agent, 'memoire'):
-            historique = self.agent.memoire.get_recent_history()
-        prompt = self.agent.role.generer_prompt() + "\n" + historique + "\n" + input_message.contenu
+    def handle_message(self, message: Message, agent=None) -> Message:
+        agent = agent or self.agent
 
-        if hasattr(input_message, 'meta') and input_message.meta and "action" in input_message.meta:
-            action = input_message.meta["action"]
-            for outil in getattr(self.agent.role, "outils", []):
-                if outil.__class__.__name__.lower().startswith(action.lower()):
-                    resultat = outil.run(input_message.contenu)
-                    prompt += f"\nRésultat de {outil.__class__.__name__}: {resultat}"
-                    break
+        if not message.is_valid():
+            raise ValueError(f"[{agent.name}] Message invalide reçu dans ReasoningSkill.")
 
-        reponse = self.adapter.run(prompt)
-        return reponse
+        if self.verbose:
+            print(f"[{agent.name}] [REASONING] Traitement du message reçu : {message}")
 
-    def execute(self, input_message):
-        return self.reflechir(input_message)
+        prompt = agent.role.get_prompt(message)
+
+        llm_tool: LLMAdapterTool = self._get_llm_tool_from_role(agent.role)
+        if llm_tool is None:
+            raise RuntimeError(f"[{agent.name}] Aucun outil LLM trouvé dans le rôle {agent.role.name}")
+
+        response_text = llm_tool.run(prompt)
+
+        if self.verbose:
+            print(f"[{agent.name}] [REASONING] Réponse générée :\n{response_text}\n")
+
+        response_msg = Message(
+            origine=agent.name,
+            destinataire=message.origine,
+            type_message="reponse",
+            contenu=response_text,
+            meta={"source_message_id": message.id, "prompt": prompt},
+            conversation_id=message.conversation_id or message.id
+        )
+
+        return response_msg
+
+    def _get_llm_tool_from_role(self, role):
+        for outil in role.outils:
+            if isinstance(outil, LLMAdapterTool):
+                return outil
+        return None

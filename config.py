@@ -30,18 +30,29 @@ class Config:
     LLM_INJECTION_MODE = "direct" # Mode d'injection des outils LLM : 'role' ou 'direct'
 
     verbose = True                # Active/Désactive les logs détaillés
-    MEMORY_TABLE_SCHEMA = """
-    CREATE TABLE IF NOT EXISTS memory (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        origine TEXT,
-        destinataire TEXT,
-        type_message TEXT,
-        contenu TEXT,
-        importance INTEGER,
-        memoriser BOOLEAN,
-        dialogue BOOLEAN,
-        action TEXT,
-        affichage_force BOOLEAN,
-        version_finale BOOLEAN DEFAULT 0,  -- 0 = temporaire, 1 = définitive
-        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );"""
+    MESSAGE_FIELDS = [
+        "id", "origine", "destinataire", "type_message", "contenu",
+        "importance", "memoriser", "dialogue", "action", "affichage_force",
+        "version_finale", "date", "meta", "conversation_id"
+    ]
+
+    MESSAGE_TABLE_SCHEMA = f"""
+    CREATE TABLE IF NOT EXISTS messages (
+        {', '.join([
+            'id TEXT PRIMARY KEY',
+            'origine TEXT',
+            'destinataire TEXT',
+            'type_message TEXT',
+            'contenu TEXT',
+            'importance INTEGER',
+            'memoriser BOOLEAN',
+            'dialogue BOOLEAN',
+            'action TEXT',
+            'affichage_force BOOLEAN',
+            'version_finale BOOLEAN',
+            'date TEXT',
+            'meta TEXT',
+            'conversation_id TEXT'
+        ])}
+    );
+    """
