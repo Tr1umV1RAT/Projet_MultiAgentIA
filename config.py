@@ -24,7 +24,7 @@ class Config:
     VERBOSE_COMMUNICATION = True
     DEFAULT_AFFICHAGE_FORCE = True
     LLM_PROVIDER = "ollama"       # Nom du fournisseur LLM à utiliser (ex: 'ollama', 'openai')
-    LLM_MODEL = "mistral"         # Modèle spécifique du LLM (ex: 'llama2', 'codellama', 'gpt-4')
+    LLM_MODEL = "mistral:latest"         # Modèle spécifique du LLM (ex: 'llama2', 'codellama', 'gpt-4')
     LLM_ENDPOINT = "http://localhost:11434"  # Endpoint du LLM (ex: 'http://localhost:11434' pour Ollama)
     LLM_API_KEY = ""              # Jeton/clé API si requis (par ex. pour OpenAI)
     LLM_INJECTION_MODE = "direct" # Mode d'injection des outils LLM : 'role' ou 'direct'

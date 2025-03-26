@@ -7,7 +7,7 @@ class BaseAgent:
         self.name = name
         self.role = role  # Instance de BaseRole ou dérivée
         self.verbose = verbose
-        
+
         # Interface LLM (injectée ou créée)
         self.llm = llm if llm is not None else LLMWrapper(agent=self, verbose=verbose)
 
@@ -41,17 +41,19 @@ class BaseAgent:
         """Traite tous les messages en attente via les skills disponibles."""
         while self.messages:
             message = self.messages.pop(0)
+
+            if message.origine == self.name and message.type_message == "llm_response":
+                if self.verbose:
+                    print(f"[{self.name}] \u23e9 Auto-réponse ignorée.")
+                continue
+
             if self.verbose:
                 print(f"[{self.name}] Traitement du message : {message}")
 
-            # Préparer mémoire immédiate (mais sans stocker encore)
-            self.memoire.update_short_term([message])  # court terme = temporaire
-
-            # Construire le prompt LLM enrichi
+            self.memoire.update_short_term([message])
             working_context = self.memoire.compose_working_memory()
             prompt = f"{self.get_prompt_context()}\n\n{working_context}\n\nMessage reçu : {message.contenu}"
 
-            # Appel LLM (selon le wrapper injecté)
             if hasattr(self.llm, "ask"):
                 response = self.llm.ask(prompt)
                 contenu = getattr(response, "contenu", str(response))
@@ -63,10 +65,8 @@ class BaseAgent:
             if self.verbose:
                 print(f"[{self.name}] Réponse générée : {contenu}")
 
-            # Si demandé : stocker en mémoire
             if getattr(message, "memoriser", True):
                 self.memoire.save_interaction(message)
-
 
     def get_prompt_context(self):
         """Récupère le prompt de rôle (peut être enrichi avec de la mémoire externe si besoin)."""
@@ -85,7 +85,6 @@ class BaseAgent:
         Si reuse=True, recharge la dernière mémoire existante.
         """
         from skills.memory.memory_skill import MemorySkill
-
         if reuse:
             from skills.memory.long_term import LongTermMemory
             path = LongTermMemory(self.name, base_path=base_path, reuse=True).memory_path
