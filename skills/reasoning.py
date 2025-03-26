@@ -24,7 +24,7 @@ class Reasoning(BaseSkill):
         if llm_tool is None:
             raise RuntimeError(f"[{agent.name}] Aucun outil LLM trouvé dans le rôle {agent.role.name}")
 
-        response_text = llm_tool.run(prompt)
+        response_text = llm_tool.query(prompt)
 
         if self.verbose:
             print(f"[{agent.name}] [REASONING] Réponse générée :\n{response_text}\n")

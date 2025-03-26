@@ -1,0 +1,2 @@
+Nous allons développer un projet Python simple : un outil de gestion de tâches avec ajout, suppression et affichage.
+Travaillez en équipe pour proposer un plan d'action, coder la solution, relire, synthétiser.

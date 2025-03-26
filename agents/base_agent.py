@@ -2,6 +2,7 @@
 
 from skills.communication import Communication
 from skills.memory.short_term import ShortTermMemory
+from tools.llm_wrapper import LLMWrapper
 
 class BaseAgent:
     def __init__(self, name, role, skills=None, verbose=False, communication=None):
@@ -21,6 +22,9 @@ class BaseAgent:
 
         # File d'attente de messages entrants
         self.messages = []
+
+        # Interface LLM (présente par défaut)
+        self.llm = LLMWrapper(agent=self, verbose=verbose)
 
         if self.verbose:
             print(f"[Init] Agent {self.name} initialisé avec le rôle {self.role.name}")

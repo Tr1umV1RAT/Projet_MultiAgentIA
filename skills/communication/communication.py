@@ -39,3 +39,14 @@ class Communication:
 
     def ajouter_agent(self, agent):
         self.agents.append(agent)
+
+
+   
+    def set_route_callback(self, callback):
+        self.route_callback = callback
+    
+    def afficher_messages_visibles(self):
+        print("\n--- Historique des messages envoyés ---")
+        for msg in self.outbox:
+            if msg.dialogue or msg.affichage_force:
+                print(msg)

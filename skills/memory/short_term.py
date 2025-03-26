@@ -36,3 +36,8 @@ class ShortTermMemory(BaseSkill):
     def execute(self):
         """Implémentation minimale de la méthode abstraite 'execute' de BaseSkill."""
         pass
+    def store(self, message, response):
+        """Sauvegarde à la fois le message reçu et la réponse associée."""
+        self.add_message(f"[INPUT] {message}")
+        self.add_message(f"[OUTPUT] {response}")
+        self.save(contenu=response.contenu, agent_name=message.origine, type_info=message.type_message)

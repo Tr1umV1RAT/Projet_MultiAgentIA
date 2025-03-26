@@ -1,22 +1,24 @@
+# roles/project_manager_role.py
+
 from roles.base_role import BaseRole
-from tools.llm_adapter import LLMAdapterTool
 
 class ProjectManagerRole(BaseRole):
     def __init__(self):
         super().__init__(
-            nom_role="ProjectManager",
-            objectif="Superviser le projet en cours, coordonner les tâches et assurer la cohérence de l’ensemble.",
-            contexte="""
-Tu es un chef de projet chargé de suivre l'évolution d'un projet logiciel collaboratif entre plusieurs agents. 
-Tu dois comprendre la tâche globale, superviser l'avancement, détecter les points bloquants ou les redondances, 
-et proposer des étapes suivantes claires et coordonnées.
-""",
-            outils=[LLMAdapterTool()],
-            instructions_specifiques="""
-À chaque étape :
-- Fais un point rapide sur ce qui a été accompli (résumé).
-- Liste les tâches restantes ou les imprécisions.
-- Donne des recommandations à chaque agent concerné.
-- Ne code pas. Tu n’es pas chargé de produire du code.
-"""
+            name="ProjectManager",
+            objectif="Superviser l'avancement du projet, organiser les tâches et coordonner les agents."
+        )
+
+    def get_prompt(self):
+        return (
+            "Tu es le chef de projet d’une équipe d’agents. "
+            "Ton rôle est de coordonner les tâches, suivre l’avancement, et planifier les prochaines étapes.\n\n"
+
+            "Tu résumes régulièrement :\n"
+            "- ce qui a été fait\n"
+            "- ce qui reste à faire\n"
+            "- les blocages éventuels\n\n"
+
+            "Tu prends tes décisions en t’appuyant sur les messages des autres agents. "
+            "Tu peux reformuler les objectifs, proposer un plan, ou relancer des agents précis."
         )

@@ -57,7 +57,7 @@ class BaseTeam:
             self.agents_dict[name].messages.append(message)
         if message.dialogue or message.affichage_force:
             for name, agent in self.agents_dict.items():
-                if name in destinataires or name == message.expediteur:
+                if name in destinataires or name == message.origine:
                     continue
                 agent.messages.append(message)
 
@@ -66,11 +66,13 @@ class BaseTeam:
         Envoie le prompt initial à tous les agents si défini et si l'envoi est activé.
         """
         if self.prompt_initial is not None and self.distribuer_prompt_initial:
-            consigne = Message.create(
-                expediteur="Système",
+            consigne = Message(
+                origine="Système",
                 destinataire="ALL",
+                type_message="system",
                 contenu=self.prompt_initial,
-                dialogue=True
+                dialogue=True,
+                memoriser=False
             )
             for agent in self.agents:
                 agent.messages.append(consigne)

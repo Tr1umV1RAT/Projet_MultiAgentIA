@@ -1,7 +1,7 @@
 from agents.base_agent import BaseAgent
 from skills.communication import Communication
-from skills.planning.planification_skill import PlanificationSkill
-class AgentProjectManager(BaseAgent):
+
+class AgentDesigner(BaseAgent):
     def __init__(self, name, role, verbose=False):
         super().__init__(
             name=name,
@@ -12,5 +12,5 @@ class AgentProjectManager(BaseAgent):
 
     def init_default_skills(self):
         skills = super().init_default_skills()
-        skills.append(PlanificationSkill(agent=self, verbose=self.verbose))
+        # Ajouter ici les skills spécifiques au designer
         return skills
