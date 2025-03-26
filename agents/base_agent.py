@@ -1,5 +1,6 @@
 from skills.communication import Communication
 from skills.memory.memory_skill import MemorySkill
+from skills.memory.memory_retriever import MemoryRetrieverSkill
 from tools.llm_wrapper import LLMWrapper
 from skills.communication.messages import Message
 
@@ -22,6 +23,7 @@ class BaseAgent:
         self.messages = []
 
         # Ensemble des skills
+        self.retriever = MemoryRetrieverSkill(agent=self, verbose=verbose)
         self.skills = skills if skills is not None else []
         self.skills += self.init_default_skills()
 
@@ -30,7 +32,7 @@ class BaseAgent:
 
     def init_default_skills(self):
         """Ajoute les skills indispensables à tout agent."""
-        return [self.communication, self.memoire]
+        return [self.communication, self.memoire, self.retriever]
 
     def receive_message(self, message):
         """Ajoute un message à la file d'attente."""
@@ -58,16 +60,15 @@ class BaseAgent:
             # 2. 🧠 Actualiser la mémoire court terme
             self.memoire.update_short_term([message])
 
-            # 3. 🧠 Contexte mémoire pour génération
-            working_context = self.memoire.compose_working_memory()
-            prompt = f"{self.get_prompt_context()}\n\n{working_context}\n\nMessage reçu : {message.contenu}"
+            # 3. 🧠 Contexte mémoire synthétique
+            working_context = self.retriever.build_context(message)
 
             # 4. 🧠 Génération via LLM
             if hasattr(self.llm, "ask"):
-                raw_response = self.llm.ask(prompt)
+                raw_response = self.llm.ask(working_context)
                 contenu = getattr(raw_response, "contenu", str(raw_response))
             elif hasattr(self.llm, "query"):
-                contenu = self.llm.query(prompt)
+                contenu = self.llm.query(working_context)
             else:
                 contenu = "[ERREUR: aucun LLM compatible]"
 

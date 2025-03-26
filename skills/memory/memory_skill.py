@@ -6,7 +6,7 @@ from skills.memory.short_term import ShortTermMemory
 from skills.memory.long_term import LongTermMemory
 from tools.llm_wrapper import LLMWrapper
 from skills.memory.memory_access import MemoryAccessProtocol
-
+from skills.memory.memory_retriever import MemoryRetrieverSkill
 
 class MemorySkill(BaseSkill):
     """
@@ -16,10 +16,11 @@ class MemorySkill(BaseSkill):
     - Mémoire de travail injectée dans les prompts LLM
     """
 
-    def __init__(self, agent_name: str, llm: LLMWrapper, base_path: str = "/agent_memories", verbose: bool = False, importance_minimale: int = 1):
+    def __init__(self, agent_name: str, llm: LLMWrapper, base_path: str = "/agent_memories", verbose: bool = False, importance_minimale: int = 1, agent=None):
         self.agent_name = agent_name
         self.verbose = verbose
         self.importance_minimale = importance_minimale
+        self.agent = agent
 
         self.memory_path = self._create_unique_memory_directory(base_path)
         if self.verbose:
@@ -28,6 +29,8 @@ class MemorySkill(BaseSkill):
         self.short_term = ShortTermMemory(agent_name, self.memory_path)
         self.long_term = LongTermMemory(agent_name, self.memory_path)
         self.llm = llm
+
+        self.retriever = MemoryRetrieverSkill(llm=self.llm, verbose=self.verbose, agent=self.agent)
 
     def _create_unique_memory_directory(self, base_path: str) -> str:
         os.makedirs(base_path, exist_ok=True)
@@ -44,12 +47,7 @@ class MemorySkill(BaseSkill):
 
     def compose_working_memory(self, context_instruction: str = "") -> str:
         short_context = self.short_term.get_context_summary()
-        query = f"{context_instruction}\nVoici le contexte actuel :\n{short_context}\n\nQuelles informations passées sont pertinentes ?"
-
-        if self.verbose:
-            print(f"[MemorySkill] 🤖 Interrogation mémoire long terme :\n{query}")
-
-        retrieved = self.query_llm(query)
+        retrieved = self.retriever.retrieve(short_context, context_instruction)
         return f"{short_context}\n\n⚠️ Mémoire récupérée :\n{retrieved}"
 
     def query_llm(self, prompt: str) -> str:
@@ -69,7 +67,12 @@ class MemorySkill(BaseSkill):
             return "[ERREUR: LLM incompatible]"
 
     def evaluate_importance(self, message) -> int:
+        agent_context = self.agent.get_prompt_context() if self.agent else ""
         prompt = f"""Tu es un assistant IA chargé d’évaluer l’importance d’un message dans le cadre de la mission de l’agent.
+
+Contexte de l'agent :
+{agent_context}
+
 Voici le message :
 ---
 {message}
@@ -79,7 +82,7 @@ Attribue une note entre 1 (sans intérêt) et 10 (critique).
 Réponds uniquement par un chiffre entier.
 """
         raw = self.query_llm(prompt)
-        match = re.search(r"\\b([1-9]|10)\\b", raw)
+        match = re.search(r"\b([1-9]|10)\b", raw)
         if match:
             return int(match.group(1))
         if self.verbose:
