@@ -1,13 +1,8 @@
-import sqlite3
-import os
-import json
-from skills.communication.messages import Message 
 import os
 import sqlite3
 import json
 from datetime import datetime
 from skills.communication.messages import Message
-
 
 class LongTermMemory:
     def __init__(self, agent_id: str, base_path: str = "agent_memories", reuse: bool = False):
@@ -39,9 +34,6 @@ class LongTermMemory:
         return os.path.join(self.base_path, f"{self.agent_id}_{timestamp}")
 
     def _find_latest_memory_dir(self):
-        """
-        Cherche dans base_path le dernier dossier mémoire de l'agent.
-        """
         if not os.path.exists(self.base_path):
             return None
         candidates = sorted(
@@ -65,9 +57,6 @@ class LongTermMemory:
         self.conn.commit()
 
     def store(self, message):
-        """
-        Enregistre un message dans la base longue.
-        """
         try:
             cursor = self.conn.cursor()
             cursor.execute('''
@@ -79,10 +68,6 @@ class LongTermMemory:
             print(f"[LongTermMemory] ⚠️ Erreur d’enregistrement : {e}")
 
     def query(self, question: str, llm) -> str:
-        """
-        Interroge la mémoire via un LLM.
-        Récupère les N derniers messages, construit un prompt et l'envoie à l'outil LLM.
-        """
         cursor = self.conn.cursor()
         cursor.execute("SELECT content FROM memory ORDER BY id DESC LIMIT 50")
         results = [row[0] for row in cursor.fetchall()]
@@ -97,22 +82,20 @@ Question :
 
 Réponds uniquement par les souvenirs pertinents, sans rien inventer."""
 
-        # Compatibilité maximale avec les différents wrappers/outils
-        if hasattr(llm, "query"):  # LLMAdapterTool ou LLMWrapper.llm
-            return llm.query(prompt)
-        elif hasattr(llm, "ask"):  # LLMWrapper
-            message = llm.ask(prompt)
-            return getattr(message, "contenu", str(message))
-        elif callable(llm):  # fallback
-            return llm(prompt)
-        else:
-            raise ValueError("[LongTermMemory] LLM non compatible")
+        try:
+            if hasattr(llm, "query"):
+                return llm.query(prompt)
+            elif hasattr(llm, "ask"):
+                message = llm.ask(prompt)
+                return getattr(message, "contenu", str(message))
+            elif callable(llm):
+                return llm(prompt)
+            else:
+                raise ValueError("[LongTermMemory] LLM non compatible")
+        except Exception as e:
+            return f"[LongTermMemory] ⚠️ Erreur lors de l'interrogation du LLM : {e}"
 
     def prune(self, keep_last: int = 500):
-        """
-        Implémente un mécanisme d'oubli pour éviter la surcharge.
-        Garde uniquement les N dernières entrées.
-        """
         cursor = self.conn.cursor()
         cursor.execute(f'''
             DELETE FROM memory
@@ -121,11 +104,8 @@ Réponds uniquement par les souvenirs pertinents, sans rien inventer."""
             )
         ''')
         self.conn.commit()
+
     def fetch(self, type_message=None, min_importance=2, limit=50, as_message=True):
-        """
-        Récupère les souvenirs filtrés.
-        Si as_message=True, renvoie des objets Message. Sinon, dictionnaires bruts.
-        """
         cursor = self.conn.cursor()
         query = "SELECT timestamp, role, content FROM memory WHERE 1=1"
         params = []
@@ -155,20 +135,14 @@ Réponds uniquement par les souvenirs pertinents, sans rien inventer."""
         results = []
         for ts, role, content in raw_results:
             try:
-                if as_message:
-                    obj = Message.from_dict(json.loads(content))
-                else:
-                    obj = json.loads(content)
-                results.append({
-                    "timestamp": ts,
-                    "role": role,
-                    "content": obj
-                })
+                obj = json.loads(content)
+                parsed = Message.from_dict(obj) if as_message else obj
             except Exception as err:
                 print(f"[LongTermMemory] ⚠️ Parsing erreur sur une entrée : {err}")
-                results.append({
-                    "timestamp": ts,
-                    "role": role,
-                    "content": content  # brut
-                })
+                parsed = content
+            results.append({
+                "timestamp": ts,
+                "role": role,
+                "content": parsed
+            })
         return results

@@ -1,6 +1,7 @@
 from skills.communication import Communication
 from skills.memory.memory_skill import MemorySkill
 from tools.llm_wrapper import LLMWrapper
+from skills.communication.messages import Message
 
 class BaseAgent:
     def __init__(self, name, role, skills=None, verbose=False, communication=None, llm=None):
@@ -44,19 +45,27 @@ class BaseAgent:
 
             if message.origine == self.name and message.type_message == "llm_response":
                 if self.verbose:
-                    print(f"[{self.name}] \u23e9 Auto-réponse ignorée.")
+                    print(f"[{self.name}] ⏩ Auto-réponse ignorée.")
                 continue
 
             if self.verbose:
                 print(f"[{self.name}] Traitement du message : {message}")
 
+            # 1. 🧠 Enregistrer le message entrant s’il doit être mémorisé
+            if getattr(message, "memoriser", True):
+                self.memoire.save_interaction(message)
+
+            # 2. 🧠 Actualiser la mémoire court terme
             self.memoire.update_short_term([message])
+
+            # 3. 🧠 Contexte mémoire pour génération
             working_context = self.memoire.compose_working_memory()
             prompt = f"{self.get_prompt_context()}\n\n{working_context}\n\nMessage reçu : {message.contenu}"
 
+            # 4. 🧠 Génération via LLM
             if hasattr(self.llm, "ask"):
-                response = self.llm.ask(prompt)
-                contenu = getattr(response, "contenu", str(response))
+                raw_response = self.llm.ask(prompt)
+                contenu = getattr(raw_response, "contenu", str(raw_response))
             elif hasattr(self.llm, "query"):
                 contenu = self.llm.query(prompt)
             else:
@@ -65,8 +74,22 @@ class BaseAgent:
             if self.verbose:
                 print(f"[{self.name}] Réponse générée : {contenu}")
 
-            if getattr(message, "memoriser", True):
-                self.memoire.save_interaction(message)
+            # 5. 💬 Créer un message de réponse
+            response_msg = Message(
+                origine=self.name,
+                destinataire=message.origine,
+                type_message="llm_response",
+                contenu=contenu,
+                dialogue=True,
+                memoriser=True,
+                meta={"reponse_a": message.id}
+            )
+
+            # 6. 🧠 Enregistrement mémoire de la réponse
+            self.memoire.save_interaction(response_msg)
+
+            # 7. 📨 Envoi via communication
+            self.communication.send(response_msg)
 
     def get_prompt_context(self):
         """Récupère le prompt de rôle (peut être enrichi avec de la mémoire externe si besoin)."""

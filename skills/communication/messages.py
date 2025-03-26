@@ -67,8 +67,19 @@ class Message:
         data["meta"] = json.loads(data["meta"])
         return Message(**data)
 
-    def to_json(self):
-        return json.dumps(self.to_dict(), ensure_ascii=False, indent=2)
+    def to_json(self) -> str:
+        """
+        Sérialise le message en JSON. Nettoie les types non sérialisables.
+        """
+        def default_serializer(obj):
+            if isinstance(obj, type):
+                return obj.__name__
+            try:
+                return str(obj)
+            except Exception:
+                return "[Unserializable]"
+
+        return json.dumps(self.to_dict(), default=default_serializer)
 
     # ---- REPRÉSENTATION ----
     def __repr__(self):
@@ -100,13 +111,13 @@ class Message:
 
     @staticmethod
     def system(expediteur, destinataire, contenu, **kwargs):
+        kwargs.setdefault("type_message", "system")
+        kwargs.setdefault("dialogue", False)
+        kwargs.setdefault("memoriser", False)
+        kwargs.setdefault("importance", 2)
         return Message(
             origine=expediteur,
             destinataire=destinataire,
-            type_message="system",
             contenu=contenu,
-            dialogue=False,
-            memoriser=False,
-            importance=2,
             **kwargs
         )
