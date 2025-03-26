@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List
-from skills.communication.messages import Message
 from .base_memory import BaseMemory
+from skills.communication.messages import Message
 
 class LongTermMemory(BaseMemory):
     def __init__(self, db_path):

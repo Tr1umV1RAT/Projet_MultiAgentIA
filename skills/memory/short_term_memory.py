@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List
-from skills.communication.messages import Message
 from .base_memory import BaseMemory
+from skills.communication.messages import Message
 
 class ShortTermMemory(BaseMemory):
     def __init__(self, max_size=10):
@@ -11,7 +11,6 @@ class ShortTermMemory(BaseMemory):
         self.memory.append(message)
 
     def retrieve(self, query: str = "", max_results: int = 5) -> List[Message]:
-        # Simple récupération des derniers messages (améliorable)
         return list(self.memory)[-max_results:]
 
     def clear(self):

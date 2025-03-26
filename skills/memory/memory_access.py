@@ -2,9 +2,9 @@ import os
 import sqlite3
 from datetime import datetime
 import json
+from .base_access_protocol import BaseAccessProtocol
 
-
-class MemoryAccessProtocol:
+class MemoryAccessProtocol(BaseAccessProtocol):
     """
     Protocole d'accès inter-agent à une mémoire longue.
     Gère :
