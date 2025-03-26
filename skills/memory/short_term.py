@@ -1,43 +1,27 @@
 from skills.base_skill import BaseSkill
 
-class ShortTermMemory(BaseSkill):
-    def __init__(self):
-        super().__init__("ShortTermMemory")
-        # Stocke des informations générales
-        self.memoires = []
-        # Stocke l'historique des messages de la conversation
-        self.messages = []
+class ShortTermMemory:
+    def __init__(self, agent_id: str, memory_path: str, max_length: int = 10):
+        self.agent_id = agent_id
+        self.memory_path = memory_path
+        self.buffer = []
+        self.max_length = max_length
 
-    def save(self, contenu, agent_name=None, type_info=None):
-        """Sauvegarde une information générale dans la mémoire."""
-        self.memoires.append({
-            "agent_name": agent_name,
-            "type_info": type_info,
-            "contenu": contenu
-        })
+    def add_messages(self, messages: list):
+        """
+        Ajoute une liste de messages à la mémoire court terme.
+        """
+        self.buffer.extend(messages)
+        self.buffer = self.buffer[-self.max_length:]
 
-    def recall(self, agent_name=None, type_info=None, limit=10):
-        """Récupère les dernières informations correspondant aux filtres donnés."""
-        resultats = [
-            m for m in self.memoires
-            if (agent_name is None or m["agent_name"] == agent_name) and
-               (type_info is None or m["type_info"] == type_info)
-        ]
-        return resultats[-limit:]
+    def get_context_summary(self) -> str:
+        """
+        Résume les derniers messages en un bloc de contexte (texte brut).
+        """
+        return "\n".join(str(msg) for msg in self.buffer)
 
-    def add_message(self, message: str):
-        """Ajoute un message à l'historique de la conversation."""
-        self.messages.append(message)
-    
-    def get_recent_history(self, limit=3) -> str:
-        """Retourne les derniers messages sous forme d'une chaîne séparée par des sauts de ligne."""
-        return "\n".join(self.messages[-limit:]) if self.messages else ""
-    
-    def execute(self):
-        """Implémentation minimale de la méthode abstraite 'execute' de BaseSkill."""
-        pass
-    def store(self, message, response):
-        """Sauvegarde à la fois le message reçu et la réponse associée."""
-        self.add_message(f"[INPUT] {message}")
-        self.add_message(f"[OUTPUT] {response}")
-        self.save(contenu=response.contenu, agent_name=message.origine, type_info=message.type_message)
+    def store(self, message):
+        """
+        Stocke un message unique (utile en streaming).
+        """
+        self.add_messages([message])

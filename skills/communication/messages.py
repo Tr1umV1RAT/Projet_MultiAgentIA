@@ -1,5 +1,3 @@
-# skills/communication/messages.py
-
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import uuid
@@ -29,7 +27,6 @@ class Message:
         Crée un Message à partir :
         - d'une instance Message (copie)
         - d'un dict contenant les champs
-        - d'une string : REJETÉE, car non sécurisée
         """
         if isinstance(data, Message):
             return data
@@ -47,7 +44,7 @@ class Message:
                 affichage_force=bool(data.get("affichage_force", False)),
                 version_finale=bool(data.get("version_finale", False)),
                 date=datetime.fromisoformat(data["date"]) if "date" in data else datetime.now(),
-                meta=data.get("meta", {}),
+                meta=data.get("meta", {}) if isinstance(data.get("meta", {}), dict) else json.loads(data.get("meta", "{}")),
                 conversation_id=data.get("conversation_id", "")
             )
         else:
@@ -73,18 +70,19 @@ class Message:
     def to_json(self):
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=2)
 
-    # ---- REPRESENTATION ----
+    # ---- REPRÉSENTATION ----
     def __repr__(self):
         return f"<Message {self.type_message.upper()} {self.origine} → {self.destinataire} | {self.date:%H:%M:%S}>"
 
     # ---- HELPERS PAR TYPE ----
     @staticmethod
-    def code(expediteur, destinataire, contenu, **kwargs):
+    def code(expediteur, destinataire, contenu, importance=5, **kwargs):
         return Message(
             origine=expediteur,
             destinataire=destinataire,
             type_message="code",
             contenu=contenu,
+            importance=importance,
             **kwargs
         )
 
@@ -109,5 +107,6 @@ class Message:
             contenu=contenu,
             dialogue=False,
             memoriser=False,
+            importance=2,
             **kwargs
         )
