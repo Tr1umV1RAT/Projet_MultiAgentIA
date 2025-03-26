@@ -1,6 +1,8 @@
-from agents.base_agent import BaseAgent
+# agents/agent_codeur.py
+from .base_agent import BaseAgent
 from skills.communication import Communication
-from skills.coder.code_postprocessor import CodePostProcessorSkill
+from skills.coder.code_postprocessor import CodePostprocessor
+
 class AgentCodeur(BaseAgent):
     def __init__(self, name, role, verbose=False, project_path="./temp_project"):
         super().__init__(name=name, role=role, verbose=verbose)

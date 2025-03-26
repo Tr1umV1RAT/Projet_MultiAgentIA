@@ -1,2 +1,2 @@
-from .short_term import ShortTermMemory
-from .long_term import LongTermMemory
+from skills.memory.short_term_memory import ShortTermMemory
+from skills.memory.long_term_memory import LongTermMemory

@@ -2,9 +2,9 @@ import os
 import re
 from datetime import datetime
 from skills.base_skill import BaseSkill
-from skills.memory.short_term import ShortTermMemory
-from skills.memory.long_term import LongTermMemory
-from tools.llm_wrapper import LLMWrapper
+from skills.memory.short_term_memory import ShortTermMemory
+from skills.memory.long_term_memory import LongTermMemory
+from tools.llm_interface import LLMInterface
 from skills.memory.memory_access import MemoryAccessProtocol
 from skills.memory.memory_retriever import MemoryRetrieverSkill
 
@@ -16,7 +16,7 @@ class MemorySkill(BaseSkill):
     - Mémoire de travail injectée dans les prompts LLM
     """
 
-    def __init__(self, agent_name: str, llm: LLMWrapper, base_path: str = "/agent_memories", verbose: bool = False, importance_minimale: int = 1, agent=None):
+    def __init__(self, agent_name: str, llm: LLMInterface, base_path: str = "/agent_memories", verbose: bool = False, importance_minimale: int = 1, agent=None):
         self.agent_name = agent_name
         self.verbose = verbose
         self.importance_minimale = importance_minimale

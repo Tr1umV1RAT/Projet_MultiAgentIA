@@ -1,4 +1,4 @@
-from agents.base_agent import BaseAgent
+from .base_agent import BaseAgent
 from skills.communication import Communication
 from skills.planning.planification_skill import PlanificationSkill
 class AgentProjectManager(BaseAgent):

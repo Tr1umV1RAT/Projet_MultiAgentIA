@@ -9,7 +9,7 @@ from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
 from tools.skill_manager import SkillManagerTool
 from tools.memory_manager import MemoryManagerTool
-from tools.llm_adapter import LLMAdapterTool
+
 
 class CodePostProcessorSkill(BaseSkill):
     def __init__(self, agent, verbose=False):

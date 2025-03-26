@@ -1,6 +1,6 @@
 from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
-from tools.llm_wrapper import LLMWrapper
+from tools.llm_interface import LLMInterface
 
 class SyntheseSkill(BaseSkill):
     """
@@ -10,7 +10,7 @@ class SyntheseSkill(BaseSkill):
     def __init__(self, agent, verbose=False):
         self.agent = agent
         self.verbose = verbose
-        self.llm = LLMWrapper(agent=agent, verbose=verbose)
+        self.llm = LLMInterface(agent=agent, verbose=verbose)
 
     def handle_message(self, message: Message, agent=None):
         agent = agent or self.agent

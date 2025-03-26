@@ -1,4 +1,4 @@
-from agents.base_agent import BaseAgent
+from .base_agent import BaseAgent
 from roles.role_moderateur import RoleModerateur
 from skills.reasoning import Reasoning
 from skills.communication.communication import Communication

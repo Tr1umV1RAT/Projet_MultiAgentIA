@@ -1,5 +1,5 @@
 from skills.base_skill import BaseSkill
-from tools.llm_wrapper import LLMWrapper
+from tools.llm_interface import LLMInterface
 from skills.communication.messages import Message
 
 class MemoryRetrieverSkill(BaseSkill):
@@ -9,7 +9,7 @@ class MemoryRetrieverSkill(BaseSkill):
     Utilisé par MemorySkill (ou les agents) pour composer un prompt enrichi.
     """
 
-    def __init__(self, agent, memory_long_term, llm: LLMWrapper, verbose=False):
+    def __init__(self, agent, memory_long_term, llm: LLMInterface, verbose=False):
         self.agent = agent
         self.memory_long_term = memory_long_term
         self.llm = llm

@@ -2,7 +2,7 @@
 
 from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
-from tools.llm_adapter import LLMAdapterTool
+from tools.llm_interface import LLMInterface
 
 class Reasoning(BaseSkill):
     def __init__(self, agent, verbose=False):
@@ -20,7 +20,7 @@ class Reasoning(BaseSkill):
 
         prompt = agent.role.get_prompt(message)
 
-        llm_tool: LLMAdapterTool = self._get_llm_tool_from_role(agent.role)
+        llm_tool: LLMInterface = self._get_llm_tool_from_role(agent.role)
         if llm_tool is None:
             raise RuntimeError(f"[{agent.name}] Aucun outil LLM trouvé dans le rôle {agent.role.name}")
 
@@ -42,6 +42,6 @@ class Reasoning(BaseSkill):
 
     def _get_llm_tool_from_role(self, role):
         for outil in role.outils:
-            if isinstance(outil, LLMAdapterTool):
+            if isinstance(outil, LLMInterface):
                 return outil
         return None

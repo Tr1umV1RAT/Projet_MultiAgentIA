@@ -4,7 +4,7 @@ from skills.memory.long_term_memory import LongTermMemory
 from skills.memory.working_memory import WorkingMemory
 from skills.memory.memory_manager import MemoryManager
 from skills.memory.memory_retriever import MemoryRetrieverSkill
-from tools.llm_wrapper import LLMWrapper
+from tools.llm_interface import LLMInterface
 from skills.communication.messages import Message
 
 class BaseAgent:
@@ -14,7 +14,7 @@ class BaseAgent:
         self.verbose = verbose
 
         # Interface LLM (injectée ou créée automatiquement)
-        self.llm = llm if llm else LLMWrapper(agent=self, verbose=verbose)
+        self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)
 
         # Mémoire intégrée par défaut, sauf indication contraire explicite
         if memory_enabled:
