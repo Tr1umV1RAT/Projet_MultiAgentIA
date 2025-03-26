@@ -17,8 +17,8 @@ class Message:
     affichage_force: bool = False
     version_finale: bool = False
     date: datetime = field(default_factory=datetime.now)
-    meta: dict = field(default_factory=dict)
-    conversation_id: str = ""
+    metadata: dict = field(default_factory=dict)
+    conversation_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     # ---- FACTORY ----
     @staticmethod
@@ -44,11 +44,11 @@ class Message:
                 affichage_force=bool(data.get("affichage_force", False)),
                 version_finale=bool(data.get("version_finale", False)),
                 date=datetime.fromisoformat(data["date"]) if "date" in data else datetime.now(),
-                meta=data.get("meta", {}) if isinstance(data.get("meta", {}), dict) else json.loads(data.get("meta", "{}")),
-                conversation_id=data.get("conversation_id", "")
+                metadata=data.get("metadata", {}) if isinstance(data.get("metadata", {}), dict) else json.loads(data.get("metadata", "{}")),
+                conversation_id=data.get("conversation_id", uuid.uuid4().hex)
             )
         else:
-            raise TypeError("Message.create() n'accepte que des dicts ou des objets Message.")
+            raise TypeError("Message.create() accepte uniquement des dicts ou des objets Message.")
 
     # ---- VALIDATION ----
     def is_valid(self) -> bool:
@@ -58,32 +58,31 @@ class Message:
     def to_dict(self):
         data = asdict(self)
         data["date"] = self.date.isoformat()
-        data["meta"] = json.dumps(self.meta)
+        data["metadata"] = json.dumps(self.metadata)
         return data
 
     @staticmethod
     def from_dict(data: dict):
         data["date"] = datetime.fromisoformat(data["date"])
-        data["meta"] = json.loads(data["meta"])
+        data["metadata"] = json.loads(data["metadata"])
         return Message(**data)
 
     def to_json(self) -> str:
         """
-        Sérialise le message en JSON. Nettoie les types non sérialisables.
+        Sérialise le message en JSON en gérant les types non sérialisables.
         """
         def default_serializer(obj):
-            if isinstance(obj, type):
-                return obj.__name__
-            try:
+            if isinstance(obj, (datetime,)):
+                return obj.isoformat()
+            if isinstance(obj, uuid.UUID):
                 return str(obj)
-            except Exception:
-                return "[Unserializable]"
+            return str(obj)
 
         return json.dumps(self.to_dict(), default=default_serializer)
 
     # ---- REPRÉSENTATION ----
     def __repr__(self):
-        return f"<Message {self.type_message.upper()} {self.origine} → {self.destinataire} | {self.date:%H:%M:%S}>"
+        return f"<Message [{self.type_message.upper()}] {self.origine} → {self.destinataire} | {self.date:%Y-%m-%d %H:%M:%S}>"
 
     # ---- HELPERS PAR TYPE ----
     @staticmethod
@@ -106,6 +105,7 @@ class Message:
             contenu=contenu,
             importance=10,
             dialogue=False,
+            memoriser=True,
             **kwargs
         )
 

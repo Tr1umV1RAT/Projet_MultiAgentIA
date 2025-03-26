@@ -1,40 +1,59 @@
 from skills.communication import Communication
-from skills.memory.memory_skill import MemorySkill
+from skills.memory.short_term_memory import ShortTermMemory
+from skills.memory.long_term_memory import LongTermMemory
+from skills.memory.working_memory import WorkingMemory
+from skills.memory.memory_manager import MemoryManager
 from skills.memory.memory_retriever import MemoryRetrieverSkill
 from tools.llm_wrapper import LLMWrapper
 from skills.communication.messages import Message
 
 class BaseAgent:
-    def __init__(self, name, role, skills=None, verbose=False, communication=None, llm=None):
+    def __init__(self, name, role, skills=None, verbose=False, communication=None, llm=None, memory_enabled=True):
         self.name = name
-        self.role = role  # Instance de BaseRole ou dérivée
+        self.role = role
         self.verbose = verbose
 
-        # Interface LLM (injectée ou créée)
-        self.llm = llm if llm is not None else LLMWrapper(agent=self, verbose=verbose)
+        # Interface LLM (injectée ou créée automatiquement)
+        self.llm = llm if llm else LLMWrapper(agent=self, verbose=verbose)
 
-        # Mémoire complète (short + long + mémoire immédiate)
-        self.init_memory()
+        # Mémoire intégrée par défaut, sauf indication contraire explicite
+        if memory_enabled:
+            self.init_memory()
+        else:
+            self.memory = None
 
-        # Communication (skill) injectée ou par défaut
-        self.communication = communication if communication is not None else Communication(verbose=verbose)
+        # Communication (injectée ou créée automatiquement)
+        self.communication = communication if communication else Communication(verbose=verbose)
 
         # File d'attente de messages entrants
         self.messages = []
 
-        # Ensemble des skills
+        # Skills supplémentaires
         self.retriever = MemoryRetrieverSkill(agent=self, verbose=verbose)
-        self.skills = skills if skills is not None else []
+        self.skills = skills if skills else []
         self.skills += self.init_default_skills()
 
         if self.verbose:
             print(f"[Init] Agent {self.name} initialisé avec le rôle {self.role.name}")
 
     def init_default_skills(self):
-        """Ajoute les skills indispensables à tout agent."""
-        return [self.communication, self.memoire, self.retriever]
+        """Skills indispensables à tout agent par défaut."""
+        default_skills = [self.communication, self.retriever]
+        if self.memory:
+            default_skills.append(self.memory)
+        return default_skills
 
-    def receive_message(self, message):
+    def init_memory(self, base_path="agent_memories"):
+        """Initialise automatiquement les mémoires (STM, LTM, WorkingMemory)."""
+        stm = ShortTermMemory()
+        ltm = LongTermMemory(db_path=f"{base_path}/{self.name}_ltm.db")
+        wm = WorkingMemory(self.llm, ltm)
+        self.memory = MemoryManager(stm, ltm, wm)
+
+        if self.verbose:
+            print(f"[Memory] Mémoire activée pour {self.name}.")
+
+    def receive_message(self, message: Message):
         """Ajoute un message à la file d'attente."""
         self.messages.append(message)
         if self.verbose:
@@ -53,47 +72,42 @@ class BaseAgent:
             if self.verbose:
                 print(f"[{self.name}] Traitement du message : {message}")
 
-            # 1. 🧠 Enregistrer le message entrant s’il doit être mémorisé
-            if getattr(message, "memoriser", True):
-                self.memoire.save_interaction(message)
+            # Enregistrer le message entrant en mémoire si nécessaire
+            if self.memory and getattr(message, "memoriser", True):
+                self.memory.store_message(message)
 
-            # 2. 🧠 Actualiser la mémoire court terme
-            self.memoire.update_short_term([message])
+            # Générer le contexte mémoire dynamique (Working Memory)
+            contexte = self.retriever.build_context(message) if self.memory else ""
 
-            # 3. 🧠 Contexte mémoire synthétique
-            working_context = self.retriever.build_context(message)
+            # Préparer le prompt final pour LLM
+            prompt_final = f"{self.role.get_prompt()}\nContexte: {contexte}\n{message.contenu}"
 
-            # 4. 🧠 Génération via LLM
-            if hasattr(self.llm, "ask"):
-                raw_response = self.llm.ask(working_context)
-                contenu = getattr(raw_response, "contenu", str(raw_response))
-            elif hasattr(self.llm, "query"):
-                contenu = self.llm.query(working_context)
-            else:
-                contenu = "[ERREUR: aucun LLM compatible]"
+            # Générer la réponse via LLM
+            response_contenu = self.llm.query(prompt_final)
 
             if self.verbose:
-                print(f"[{self.name}] Réponse générée : {contenu}")
+                print(f"[{self.name}] Réponse générée : {response_contenu}")
 
-            # 5. 💬 Créer un message de réponse
+            # Créer le message de réponse
             response_msg = Message(
                 origine=self.name,
                 destinataire=message.origine,
                 type_message="llm_response",
-                contenu=contenu,
+                contenu=response_contenu,
                 dialogue=True,
                 memoriser=True,
-                meta={"reponse_a": message.id}
+                metadata={"reponse_a": getattr(message, 'id', None)}
             )
 
-            # 6. 🧠 Enregistrement mémoire de la réponse
-            self.memoire.save_interaction(response_msg)
+            # Stocker la réponse dans la mémoire
+            if self.memory:
+                self.memory.store_message(response_msg)
 
-            # 7. 📨 Envoi via communication
+            # Envoyer la réponse via Communication
             self.communication.send(response_msg)
 
     def get_prompt_context(self):
-        """Récupère le prompt de rôle (peut être enrichi avec de la mémoire externe si besoin)."""
+        """Retourne le prompt de rôle pour initialiser ou enrichir le contexte."""
         return self.role.get_prompt()
 
     @property
@@ -103,25 +117,18 @@ class BaseAgent:
     def __repr__(self):
         return f"<Agent {self.name} - Rôle: {self.role.name}>"
 
-    def init_memory(self, base_path: str = "agent_memories", reuse: bool = False):
-        """
-        Réinitialise la mémoire de l'agent avec des options spécifiques.
-        Si reuse=True, recharge la dernière mémoire existante.
-        """
-        from skills.memory.memory_skill import MemorySkill
-        if reuse:
-            from skills.memory.long_term import LongTermMemory
-            path = LongTermMemory(self.name, base_path=base_path, reuse=True).memory_path
-            self.memoire = MemorySkill(
-                agent_name=self.name,
-                llm=self.llm,
-                base_path=path,
-                verbose=self.verbose
-            )
-        else:
-            self.memoire = MemorySkill(
-                agent_name=self.name,
-                llm=self.llm,
-                base_path=base_path,
-                verbose=self.verbose
-            )
+if __name__ == "__main__":
+    import sys
+    prompt = " ".join(sys.argv[1:])
+
+    if not prompt:
+        print("Veuillez fournir un prompt.")
+        sys.exit(1)
+
+    from roles.base_role import BaseRole
+    role = BaseRole(name="DefaultAgent", objectif="Conversation générale")
+    agent = BaseAgent(name="AgentCLI", role=role)
+
+    message_recu = Message(contenu=prompt, origine="user", destinataire="AgentCLI")
+    agent.receive_message(message_recu)
+    agent.process_messages()
