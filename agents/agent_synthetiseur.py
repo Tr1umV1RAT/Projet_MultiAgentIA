@@ -1,17 +1,20 @@
 from agents.base_agent import BaseAgent
-from skills.communication import Communication
-from skills.synthetiseur.synthese_skill import SyntheseSkill
-class AgentSynthetiseur(BaseAgent):
-    def __init__(self, name, role, verbose=False):
-        super().__init__(
-            name=name,
-            role=role,
-            verbose=verbose,
-            communication=Communication(verbose=verbose)
-        )
+from roles.role_synthetiseur import RoleSynthetiseur
+from skills.reasoning import Reasoning
+from skills.communication.communication import Communication
+from skills.memory.memory_skill import MemorySkill
 
-    def init_default_skills(self):
-        skills = super().init_default_skills()
-        skills.append(SyntheseSkill(agent=self, verbose=self.verbose))
-        # Ajouter ici les skills spécifiques au synthétiseur (ex: SyntheseSkill)
-        return skills
+class AgentSynthetiseur(BaseAgent):
+    def __init__(self, name: str = "Synthétiseur", verbose: bool = False):
+        role = RoleSynthetiseur()
+        super().__init__(name=name, role=role, verbose=verbose)
+
+        self.skills.append(Reasoning)
+        self.skills.append(self.communication)
+        self.skills.append(self.memoire)
+
+    def produire_synthese(self):
+        messages = self.memoire.short_term.buffer
+        contenu = "\n".join(str(msg) for msg in messages)
+        prompt = f"Fais une synthèse du débat suivant :\n{contenu}"
+        return self.llm.ask(prompt)
