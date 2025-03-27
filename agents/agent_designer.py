@@ -1,16 +1,8 @@
 from .base_agent import BaseAgent
-from skills.communication import Communication
 
 class AgentDesigner(BaseAgent):
     def __init__(self, name, role, verbose=False):
-        super().__init__(
-            name=name,
-            role=role,
-            verbose=verbose,
-            communication=Communication(verbose=verbose)
-        )
+        super().__init__(name=name, role=role, verbose=verbose)
 
     def init_default_skills(self):
-        skills = super().init_default_skills()
-        # Ajouter ici les skills spécifiques au designer
-        return skills
+        return super().init_default_skills()

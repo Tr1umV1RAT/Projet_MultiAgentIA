@@ -3,8 +3,7 @@
 from typing import Optional
 from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
-from tools.skill_manager import SkillManagerTool
-from tools.memory_manager import MemoryManagerTool
+from skills.memory.memory_manager import MemoryManagerTool
 
 class SkillPlanner(BaseSkill):
     def __init__(self, agent, verbose=False):

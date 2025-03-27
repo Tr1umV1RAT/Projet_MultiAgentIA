@@ -1,7 +1,4 @@
 from skills.communication import Communication
-from skills.memory.short_term_memory import ShortTermMemory
-from skills.memory.long_term_memory import LongTermMemory
-from skills.memory.working_memory import WorkingMemory
 from skills.memory.memory_manager import MemoryManager
 from skills.memory.memory_retriever import MemoryRetrieverSkill
 from tools.llm_interface import LLMInterface
@@ -12,32 +9,15 @@ class BaseAgent:
         self.name = name
         self.role = role
         self.verbose = verbose
-
-        # Interface LLM (injectée ou créée automatiquement)
         self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)
-
-        # Mémoire intégrée par défaut, sauf indication contraire explicite
-        if memory_enabled:
-            self.init_memory()
-        else:
-            self.memory = None
-
-        # Communication (injectée ou créée automatiquement)
+        self.memory = MemoryManager(agent=self) if memory_enabled else None
         self.communication = communication if communication else Communication(verbose=verbose)
-
-        # File d'attente de messages entrants
         self.messages = []
-
-        # Skills supplémentaires
         self.retriever = MemoryRetrieverSkill(agent=self, verbose=verbose)
         self.skills = skills if skills else []
         self.skills += self.init_default_skills()
 
-        if self.verbose:
-            print(f"[Init] Agent {self.name} initialisé avec le rôle {self.role.name}")
-
     def init_default_skills(self):
-        """Skills indispensables à tout agent par défaut."""
         default_skills = [self.communication, self.retriever]
         if self.memory:
             default_skills.append(self.memory)
@@ -60,35 +40,15 @@ class BaseAgent:
             print(f"[{self.name}] Message reçu : {message}")
 
     def process_messages(self):
-        """Traite tous les messages en attente via les skills disponibles."""
         while self.messages:
             message = self.messages.pop(0)
-
-            if message.origine == self.name and message.type_message == "llm_response":
-                if self.verbose:
-                    print(f"[{self.name}] ⏩ Auto-réponse ignorée.")
-                continue
-
-            if self.verbose:
-                print(f"[{self.name}] Traitement du message : {message}")
-
-            # Enregistrer le message entrant en mémoire si nécessaire
-            if self.memory and getattr(message, "memoriser", True):
+            if self.memory and message.memoriser:
                 self.memory.store_message(message)
 
-            # Générer le contexte mémoire dynamique (Working Memory)
             contexte = self.retriever.build_context(message) if self.memory else ""
-
-            # Préparer le prompt final pour LLM
             prompt_final = f"{self.role.get_prompt()}\nContexte: {contexte}\n{message.contenu}"
-
-            # Générer la réponse via LLM
             response_contenu = self.llm.query(prompt_final)
 
-            if self.verbose:
-                print(f"[{self.name}] Réponse générée : {response_contenu}")
-
-            # Créer le message de réponse
             response_msg = Message(
                 origine=self.name,
                 destinataire=message.origine,
@@ -99,11 +59,8 @@ class BaseAgent:
                 metadata={"reponse_a": getattr(message, 'id', None)}
             )
 
-            # Stocker la réponse dans la mémoire
             if self.memory:
                 self.memory.store_message(response_msg)
-
-            # Envoyer la réponse via Communication
             self.communication.send(response_msg)
 
     def get_prompt_context(self):
