@@ -28,6 +28,12 @@ class BaseAgent:
         self.skills = skills if skills else []
         self.skills.append(self.memory_skill)
 
+    @classmethod
+    def from_config(cls, config: dict, verbose=False):
+        name = config.get("name")
+        # TODO : charger d'autres infos comme le role, les skills, etc.
+        return cls(name=name, verbose=verbose)
+
     def receive_message(self, message):
         self.memory.store_message(message)
         return self.process_message(message)
