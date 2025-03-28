@@ -1,17 +1,21 @@
 import os
+from datetime import datetime
 from tools.llm_interface import LLMInterface
 from skills.communication import Communication
 from skills.communication.messages import Message
 from skills.memory.memory_skill import MemorySkill
 
 class BaseAgent:
-    def __init__(self, name, role=None, skills=None, verbose=False, llm=None, base_path="agent_memories"):
+    def __init__(self, name=None, role=None, skills=None, verbose=False, llm=None, base_path="agent_memories"):
+        if name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            name = f"Agent_{timestamp}"
+
         self.name = name
         self.role = role
         self.verbose = verbose
         self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)
 
-        # Crée un dossier mémoire spécifique à cet agent
         agent_memory_path = os.path.join(base_path, self.name)
         os.makedirs(agent_memory_path, exist_ok=True)
 
@@ -29,41 +33,35 @@ class BaseAgent:
         return self.process_message(message)
 
     def process_message(self, message):
-        # Récupère un résumé de la mémoire (s'il y a des souvenirs pertinents)
         memory_summary = self.retriever.get_memory_summary(message)
-        
-        # Construit le prompt final en incluant la mémoire en préambule
+
         prompt = ""
         if memory_summary:
             prompt += f"Informations précédentes pertinentes :\n{memory_summary}\n\n"
         prompt += message.contenu
-        
-        # Si un rôle est défini, on enrichit le prompt avec le contexte du rôle
+
         if self.role:
             prompt = self.role.get_prompt(prompt)
-        
-        # On génère la réponse en interrogeant le LLM sur le prompt complet
+
         response_content = self.llm.query(prompt)
-        
+
         response_message = Message(
             origine=self.name,
             destinataire=message.origine,
             contenu=response_content,
             conversation_id=message.conversation_id
         )
-        
+
         self.communication.send(response_message)
         self.memory.store_message(response_message)
-        
-        return response_message
 
+        return response_message
 
 def cli_chat():
     import sys
-    agent_name = "AgentCLI"
-    agent = BaseAgent(name=agent_name, verbose=True)
+    agent = BaseAgent(verbose=True)
 
-    print(f"Discussion avec {agent_name} (tape 'quit' pour quitter) :")
+    print(f"Discussion avec {agent.name} (tape 'quit' pour quitter) :")
 
     conversation_id = None
 
