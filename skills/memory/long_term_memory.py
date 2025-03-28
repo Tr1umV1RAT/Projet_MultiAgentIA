@@ -4,7 +4,10 @@ from .base_memory import BaseMemory
 from skills.communication.messages import Message
 
 class LongTermMemory(BaseMemory):
-    def __init__(self, db_path):
+    def __init__(self,db_path, agent_name=None, memory_path=None):
+        self.agent_name = agent_name
+        self.memory_path = memory_path
+        self.messages = []
         self.conn = sqlite3.connect(db_path)
         self._setup_db()
 

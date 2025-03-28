@@ -1,17 +1,17 @@
-from collections import deque
-from typing import List
-from .base_memory import BaseMemory
+from skills.memory.base_memory import BaseMemory
 from skills.communication.messages import Message
 
 class ShortTermMemory(BaseMemory):
-    def __init__(self, max_size=10):
-        self.memory = deque(maxlen=max_size)
+    def __init__(self, agent_name=None, memory_path=None):
+        self.agent_name = agent_name
+        self.memory_path = memory_path
+        self.messages = []
 
     def store(self, message: Message):
-        self.memory.append(message)
+        self.messages.append(message)
 
-    def retrieve(self, query: str = "", max_results: int = 5) -> List[Message]:
-        return list(self.memory)[-max_results:]
+    def retrieve(self, query, max_results=10):
+        return self.messages[-max_results:]
 
     def clear(self):
-        self.memory.clear()
+        self.messages.clear()

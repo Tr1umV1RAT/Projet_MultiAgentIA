@@ -1,10 +1,12 @@
 from roles.base_role import BaseRole
 
-class CodeurRole(BaseRole):
+class Codeur(BaseRole):
     def __init__(self):
         super().__init__(
             name="Codeur",
-            objectif="Écrire du code propre, fonctionnel, et conforme aux spécifications du projet."
+            objectif="Créer du code clair, structuré et fonctionnel à partir des demandes reçues.",
+            contexte="Tu es un expert en programmation, capable d'écrire des scripts et des applications robustes.",
+            instructions_specifiques="Rédige toujours du code commenté et clair, en python par défaut sauf précision contraire."
         )
 
     def get_prompt(self):
