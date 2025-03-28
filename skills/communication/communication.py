@@ -18,8 +18,8 @@ class Communication:
         self.outbox.append(message)
 
         # ✅ Rendu clair et utile :
-        if self.verbose and (message.dialogue or message.affichage_force):
-            print(f"🗨️  {message.origine} → {message.destinataire} : {message.contenu[:160]}")
+        #if self.verbose and (message.dialogue or message.affichage_force):
+         #   print(f"🗨️  {message.origine} → {message.destinataire} : {message.contenu[:500]}")
 
         if self.route_callback:
             self.route_callback(message)

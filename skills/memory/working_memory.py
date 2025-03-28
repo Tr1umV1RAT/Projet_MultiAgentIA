@@ -1,22 +1,9 @@
-from typing import List
-from skills.communication.messages import Message
-from .base_memory import BaseMemory
-from tools.llm_interface import LLMInterface
-from skills.memory.short_term_memory import ShortTermMemory
-from skills.memory.long_term_memory import LongTermMemory
-class WorkingMemory(BaseMemory):
-    def __init__(self, llm_adapter: LLMInterface, long_term_memory: LongTermMemory):
-        self.llm = llm_adapter
-        self.ltm = long_term_memory
 
-    def store(self, message: Message):
-        pass  # La WorkingMemory ne stocke pas directement
+class WorkingMemory:
+    def __init__(self, llm, long_term_memory):
+        self.llm = llm
+        self.long_term_memory = long_term_memory
 
-    def retrieve(self, query: str, max_results: int = 5) -> List[Message]:
-        # Utiliser LLM pour générer une synthèse contextuelle
-        retrieved = self.ltm.retrieve(query, max_results=20)
-        synthesis = self.llm.synthesize_context([msg.contenu for msg in retrieved])
-        return [Message(contenu=synthesis)]
-
-    def clear(self):
-        pass  # La WorkingMemory est dynamique et ne nécessite pas de nettoyage
+    def retrieve(self, query, max_results=5):
+        # On délègue simplement à la LTM ici.
+        return self.long_term_memory.retrieve(query, max_results)

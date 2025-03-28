@@ -11,7 +11,7 @@ from skills.memory.llm_memory_access import LLMMemoryAccess
 class MemorySkill(BaseSkill):
     def __init__(
         self, agent_name, llm,
-        base_path="agent_memories", verbose=False, importance_threshold=5
+        base_path="agent_memories", verbose=False, importance_threshold=1  # Seuil modifié ici
     ):
         self.agent_name = agent_name
         self.verbose = verbose

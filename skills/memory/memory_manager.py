@@ -1,7 +1,7 @@
 from skills.communication.messages import Message
 
 class MemoryManager:
-    def __init__(self, stm, ltm, wm, importance_threshold=5):
+    def __init__(self, stm, ltm, wm, importance_threshold=1):  # Seuil passé à 1
         self.stm = stm
         self.ltm = ltm
         self.wm = wm
@@ -9,6 +9,7 @@ class MemoryManager:
 
     def store_message(self, message: Message):
         self.stm.store(message)
+        # On stocke dans la LTM si l'importance du message est >= seuil
         if message.importance >= self.importance_threshold:
             self.ltm.store(message)
 
