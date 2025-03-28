@@ -1,7 +1,7 @@
 import requests
 from tools.base_tool import BaseTool
 
-class WebSearchTool(BaseTool):
+class WebSearch(BaseTool):
     def __init__(self, name="WebSearch", model="mistral"):
         super().__init__(name)
         self.url = "http://localhost:11434/api/generate"

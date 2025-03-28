@@ -2,7 +2,7 @@ import argparse
 from teams.base_team import BaseTeam
 from agents.agent_debateur import AgentDebateur
 from agents.agent_moderateur import AgentModerateur
-from agents.agent_synthetiseur_test import AgentSynthetiseur
+from agents.agent_synthetiseur import AgentSynthetiseur
 from skills.communication.messages import Message
 
 class DebateTeam(BaseTeam):

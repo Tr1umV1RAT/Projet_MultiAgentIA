@@ -2,7 +2,8 @@ from typing import List
 from skills.communication.messages import Message
 from .base_memory import BaseMemory
 from tools.llm_interface import LLMInterface
-
+from skills.memory.short_term_memory import ShortTermMemory
+from skills.memory.long_term_memory import LongTermMemory
 class WorkingMemory(BaseMemory):
     def __init__(self, llm_adapter: LLMInterface, long_term_memory: LongTermMemory):
         self.llm = llm_adapter

@@ -1,6 +1,6 @@
 # agents/agent_codeur.py
 from .base_agent import BaseAgent
-from skills.coder.code_postprocessor_skill import CodePostprocessorSkill
+from skills.coder.code_postprocessor_skill import CodePostProcessorSkill
 
 class AgentCodeur(BaseAgent):
     def __init__(self, name, role, verbose=False, project_path="./temp_project"):

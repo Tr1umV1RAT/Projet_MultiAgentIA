@@ -3,17 +3,25 @@ from skills.memory.memory_manager import MemoryManager
 from skills.memory.memory_retriever import MemoryRetrieverSkill
 from tools.llm_interface import LLMInterface
 from skills.communication.messages import Message
+from skills.memory.short_term_memory import ShortTermMemory
+from skills.memory.long_term_memory import LongTermMemory
+from skills.memory.working_memory import WorkingMemory
+
+
 
 class BaseAgent:
-    def __init__(self, name, role, skills=None, verbose=False, communication=None, llm=None, memory_enabled=True):
+    def __init__(self, name, role, skills=None, verbose=False, communication=None, llm=None, memory_enabled=True, base_path="agent_memories"):
         self.name = name
         self.role = role
         self.verbose = verbose
-        self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)
-        self.memory = MemoryManager(agent=self) if memory_enabled else None
+        self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)       
+        self.stm = ShortTermMemory()
+        self.ltm = LongTermMemory(db_path=f"{base_path}/{self.name}_ltm.db")
+        self.wm = WorkingMemory(self.llm, self.ltm)
+        self.memory = MemoryManager(self.stm, self.ltm, self.wm) if memory_enabled else None
         self.communication = communication if communication else Communication(verbose=verbose)
         self.messages = []
-        self.retriever = MemoryRetrieverSkill(agent=self, verbose=verbose)
+        self.retriever = MemoryRetrieverSkill(self,self.ltm,llm)
         self.skills = skills if skills else []
         self.skills += self.init_default_skills()
 
@@ -44,9 +52,8 @@ class BaseAgent:
             message = self.messages.pop(0)
             if self.memory and message.memoriser:
                 self.memory.store_message(message)
-
-            contexte = self.retriever.build_context(message) if self.memory else ""
-            prompt_final = f"{self.role.get_prompt()}\nContexte: {contexte}\n{message.contenu}"
+                contexte = self.retriever.build_retrieval_prompt(message) if self.memory else ""
+            prompt_final = f"{self.role.get_prompt(message)}\nContexte: {contexte}\n{message.contenu}"
             response_contenu = self.llm.query(prompt_final)
 
             response_msg = Message(
@@ -63,9 +70,11 @@ class BaseAgent:
                 self.memory.store_message(response_msg)
             self.communication.send(response_msg)
 
-    def get_prompt_context(self):
+    def get_prompt_context(self, message: Message):
         """Retourne le prompt de rôle pour initialiser ou enrichir le contexte."""
-        return self.role.get_prompt()
+        if self.messages:
+            message = self.messages.pop(0) 
+        return self.role.get_prompt(Message or message_recu)
 
     @property
     def objectif(self):

@@ -156,3 +156,51 @@ git clone https://github.com/Tr1umV1RAT/Projet_MultiAgentIA.git
 ## Licence
 
 Ce projet est sous licence **Apache 2.0**.
+# Projet MultiAgentIA
+
+Le **Projet MultiAgentIA** est une initiative open-source dont l'objectif est de fournir une plateforme flexible et modulaire pour créer, orchestrer et faire interagir facilement des agents intelligents pilotés par des modèles d'intelligence artificielle (LLM). La philosophie centrale du projet repose sur une modularité extrême et une simplicité d'utilisation permettant à tout utilisateur, même sans connaissance approfondie en IA, de composer et de contrôler des équipes d'agents pour diverses applications : développement logiciel, débats structurés, analyses, scénarisation de jeux, etc.
+
+## Philosophie du Projet
+
+- **Modularité** : Chaque composant (agents, rôles, skills, outils) est conçu pour être autonome, réutilisable, et interchangeable facilement.
+- **Simplicité** : Des interfaces simples (CLI et API) permettent une prise en main rapide et une intégration aisée dans divers contextes d'utilisation.
+
+## Structure du Projet
+
+### Composants Principaux
+- **Agents** : Entités intelligentes exécutant des tâches spécifiques grâce à des rôles et des compétences définies.
+- **Rôles** : Définissent les objectifs et outils propres à chaque type d'agent.
+- **Skills** : Capacités générales comme la mémoire ou le raisonnement, directement intégrées aux agents selon leur besoin.
+- **Outils (Tools)** : Fonctions pratiques et réutilisables, telles que la recherche web ou la gestion de fichiers.
+- **Équipes (Teams)** : Coordonnent les interactions et communications structurées entre plusieurs agents selon un scénario donné.
+
+## Exemple d'utilisation
+
+### Utiliser un agent directement depuis la ligne de commande
+```bash
+python agents/base_agent.py --name Agent1 --role Codeur --prompt "Écris une fonction Python qui trie une liste."
+```
+
+### Lancer une équipe complète (débat)
+```bash
+python exemples/debate_team.py --sujet "L'IA est-elle bénéfique pour l'humanité ?" --n_round 10
+```
+
+### Si vous êtes sous windows et que votre ordinateur ne reconnait pas les fichiers du projets comme des packages python, placez vous à la racine, ouvrez la console et tapez :
+
+```bash
+set PYTHONPATH=%cd%
+
+```
+
+## Axes d'Amélioration à Venir
+- **Interface utilisateur avancée** : Développement d'une interface graphique intuitive pour gérer plus facilement les équipes et visualiser les interactions.
+- **Optimisation mémoire** : Amélioration de la gestion dynamique de la mémoire (court et long terme) pour des performances accrues.
+- **Amélioration de l'autonomie** : Capacités accrues des agents à sélectionner dynamiquement leurs propres outils et compétences selon la situation.
+- **Documentation étendue** : Complétion et enrichissement de la documentation technique et des exemples d'usage.
+- **Gestion avancée des projets** : Mise en place de mécanismes robustes de gestion des historiques et des versions de projets.
+
+---
+
+Le projet étant toujours en développement actif, vos contributions, suggestions et commentaires sont essentiels pour l'améliorer continuellement. N'hésitez pas à participer !
+

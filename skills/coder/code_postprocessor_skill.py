@@ -7,7 +7,7 @@ from typing import Optional
 
 from skills.base_skill import BaseSkill
 from skills.communication.messages import Message
-from skills.memory.memory_manager import MemoryManagerTool
+from skills.memory.memory_manager import MemoryManager
 
 
 class CodePostProcessorSkill(BaseSkill):
