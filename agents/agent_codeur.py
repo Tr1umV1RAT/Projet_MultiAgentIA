@@ -1,50 +1,30 @@
 from agents.base_agent import BaseAgent
-from skills.coder_skill import CoderSkill
-from roles.codeur import Codeur
-from tools.llm_interface import LLMInterface
-from skills.communication.messages import Message
+from skills.coder_skill import SkillCoder
 
 class AgentCodeur(BaseAgent):
-    def __init__(self, name, verbose=False):
-        role = Codeur()
-        llm = LLMInterface(verbose=verbose)
-        
-        super().__init__(name, role=role, verbose=verbose, llm=llm)
+    def __init__(self, name="Codeur", role=None, project_path="project_outputs", memory=None, verbose=False):
+        super().__init__(name=name, role=role, verbose=verbose)
 
-        # Ajouter spécifiquement le skill Coder à cet agent
-        self.coder_skill = CoderSkill(llm, verbose=verbose)
-        self.skills.append(self.coder_skill)
-
-    def process_message(self, message: Message):
-        # Utiliser explicitement le skill de codage
-        code_result = self.coder_skill.generate_code(message.contenu)
-
-        response_message = Message(
-            origine=self.name,
-            destinataire=message.origine,
-            contenu=code_result,
-            conversation_id=message.conversation_id
+        self.skill_coder = SkillCoder(
+            agent=self,
+            project_path=project_path,
+            memory=memory if memory else self.memory,
+            verbose=verbose
         )
 
-        self.communication.send(response_message)
-        self.memory.store_message(response_message)
+    def coder(self, instruction: str, context: str = None, first_call: bool = True):
+        return self.skill_coder.generate_code(
+            instruction=instruction,
+            context=context,
+            first_call=first_call
+        )
 
-        if self.verbose:
-            print(f"[{self.name}] Code généré :\n{code_result}")
+    def receive_message(self, message):
+        if getattr(message, "action", None) == "coder":
+            return self.coder(
+                instruction=message.contenu,
+                context=message.metadata.get("context"),
+                first_call=message.metadata.get("first_call", True)
+            )
 
-        return response_message
-
-if __name__ == "__main__":
-    import sys
-    prompt_cli = sys.argv[1] if len(sys.argv) > 1 else "Ecris une fonction Python qui additionne deux nombres"
-    
-    agent = AgentCodeur(name="AgentCodeurCLI", verbose=True)
-
-    message_cli = Message(
-        origine="utilisateur",
-        destinataire=agent.name,
-        contenu=prompt_cli
-    )
-
-    response = agent.receive_message(message_cli)
-    print(f"Code généré par {agent.name} :\n{response.contenu}")
+        return super().receive_message(message)

@@ -35,7 +35,10 @@ class BaseAgent:
         return cls(name=name, verbose=verbose)
 
     def receive_message(self, message):
-        self.memory.store_message(message)
+        if getattr(message, "action", None):
+            if self.verbose:
+                print(f"[{self.name}] Action '{message.action}' détectée — traitement ignoré dans BaseAgent.")
+            return None
         return self.process_message(message)
 
     def process_message(self, message):
