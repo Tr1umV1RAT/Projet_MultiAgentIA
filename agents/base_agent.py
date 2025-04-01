@@ -1,8 +1,11 @@
 import os
 from datetime import datetime
+from typing import Optional
+
 from tools.llm_interface import LLMInterface
 from skills.communication import Communication
 from skills.communication.messages import Message
+from skills.communication.prompt_builder import PromptBuilder
 from skills.memory.memory_skill import MemorySkill
 
 class BaseAgent:
@@ -34,23 +37,38 @@ class BaseAgent:
         # TODO : charger d'autres infos comme le role, les skills, etc.
         return cls(name=name, verbose=verbose)
 
+    def get_skill_by_name(self, name: str):
+        for skill in self.skills:
+            if hasattr(skill, "name") and skill.name == name:
+                return skill
+        return None
+
     def receive_message(self, message):
-        if getattr(message, "action", None):
+        if action := getattr(message, "action", None):
             if self.verbose:
-                print(f"[{self.name}] Action '{message.action}' détectée — traitement ignoré dans BaseAgent.")
+                print(f"[{self.name}] Action '{action}' détectée — délégation à la skill correspondante.")
+            skill = self.get_skill_by_name(action)
+            if skill:
+                return skill.run(message)
+            elif self.verbose:
+                print(f"[{self.name}] Aucun skill nommé '{action}' trouvé dans l'agent.")
             return None
         return self.process_message(message)
 
     def process_message(self, message):
         memory_summary = self.retriever.get_memory_summary(message)
 
-        prompt = ""
-        if memory_summary:
-            prompt += f"Informations précédentes pertinentes :\n{memory_summary}\n\n"
-        prompt += message.contenu
-
         if self.role:
-            prompt = self.role.get_prompt(prompt)
+            prompt = PromptBuilder.build(
+                role=self.role,
+                instruction=message.contenu,
+                memory=memory_summary
+            )
+        else:
+            prompt = ""
+            if memory_summary:
+                prompt += f"🧠 CONTEXTE :\n{memory_summary}\n\n"
+            prompt += f"🎯 INSTRUCTION :\n{message.contenu}"
 
         response_content = self.llm.query(prompt)
 
@@ -87,8 +105,12 @@ def cli_chat():
         )
 
         response = agent.receive_message(user_message)
-        conversation_id = response.conversation_id
-        print(f"{agent.name}: {response.contenu}")
+        if response:
+            conversation_id = response.conversation_id
+            print(f"{agent.name}: {response.contenu}")
+        else:
+            print(f"{agent.name}: (aucune réponse)")
+
 
 if __name__ == "__main__":
     cli_chat()
