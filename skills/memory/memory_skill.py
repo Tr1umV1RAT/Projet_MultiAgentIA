@@ -10,19 +10,19 @@ from skills.memory.llm_memory_access import LLMMemoryAccess
 
 class MemorySkill(BaseSkill):
     def __init__(
-        self, agent_name, llm,
+        self, name, llm,
         base_path="agent_memories", verbose=False, importance_threshold=1  # Seuil modifié ici
     ):
-        self.agent_name = agent_name
+        self.name = name
         self.verbose = verbose
         self.memory_path = self._create_unique_memory_directory(base_path)
 
-        self.short_term = ShortTermMemory(agent_name, self.memory_path)
-        self.long_term = LongTermMemory(agent_name, self.memory_path)
+        self.short_term = ShortTermMemory(name, self.memory_path)
+        self.long_term = LongTermMemory(name, self.memory_path)
         self.working_memory = WorkingMemory(llm, self.long_term)
 
         memory_strategy = LLMMemoryAccess(llm, self.long_term, verbose=verbose)
-        self.retriever = MemoryRetrieverSkill( memory_strategy, agent=agent_name, verbose=verbose)
+        self.retriever = MemoryRetrieverSkill( memory_strategy, agent=name, verbose=verbose)
 
         self.manager = MemoryManager(
             self.short_term, self.long_term, self.working_memory, importance_threshold
@@ -31,7 +31,7 @@ class MemorySkill(BaseSkill):
     def _create_unique_memory_directory(self, base_path):
         os.makedirs(base_path, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        folder_name = f"{self.agent_name}_{timestamp}"
+        folder_name = f"{self.name}_{timestamp}"
         full_path = os.path.join(base_path, folder_name)
         os.makedirs(full_path, exist_ok=True)
         return full_path

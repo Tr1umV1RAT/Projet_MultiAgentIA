@@ -1,15 +1,25 @@
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from tools.llm_interface import LLMInterface
 from skills.communication import Communication
 from skills.communication.messages import Message
 from skills.communication.prompt_builder import PromptBuilder
 from skills.memory.memory_skill import MemorySkill
+from skills.skill_manager import SkillManager
+from config import Config
 
 class BaseAgent:
-    def __init__(self, name=None, role=None, skills=None, verbose=False, llm=None, base_path="agent_memories"):
+    def __init__(
+        self, 
+        name: Optional[str] = None, 
+        role: Optional[object] = None, 
+        skills: Optional[List[object]] = None, 
+        verbose: bool = Config.verbose,
+        llm: Optional[LLMInterface] = None,
+        base_path: str = "agent_memories"
+    ):
         if name is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             name = f"Agent_{timestamp}"
@@ -17,52 +27,65 @@ class BaseAgent:
         self.name = name
         self.role = role
         self.verbose = verbose
+
+        # Initialisation de l'interface LLM
         self.llm = llm if llm else LLMInterface(agent=self, verbose=verbose)
 
+        # Initialisation des dossiers mémoire
         agent_memory_path = os.path.join(base_path, self.name)
         os.makedirs(agent_memory_path, exist_ok=True)
 
-        self.memory_skill = MemorySkill(name, self.llm, base_path=agent_memory_path, verbose=verbose)
+        # Initialisation du Skill de Mémoire
+        self.memory_skill = MemorySkill(
+            name=self.name, 
+            llm=self.llm, 
+            base_path=agent_memory_path, 
+            verbose=verbose
+        )
         self.memory = self.memory_skill.manager
         self.retriever = self.memory_skill.retriever
 
-        self.communication = Communication(verbose=verbose)
+        # Initialisation de la communication
+        self.communication = Communication(verbose=Config.verbose_communication)
 
+        # Initialisation et intégration complète du SkillManager
+        self.skill_manager = SkillManager(self)
         self.skills = skills if skills else []
-        self.skills.append(self.memory_skill)
+
+        # Ajout du skill de mémoire par défaut
+        self.skill_manager.add_skill("memory", self.memory_skill)
+        self.skill_manager.activate_skill("memory")
+
+        # Ajout des autres skills fournis à l'initialisation
+        for skill in self.skills:
+            self.skill_manager.add_skill(skill.name, skill)
+            self.skill_manager.activate_skill(skill.name)
 
     @classmethod
-    def from_config(cls, config: dict, verbose=False):
+    def from_config(cls, config: dict, verbose=Config.verbose):
         name = config.get("name")
-        # TODO : charger d'autres infos comme le role, les skills, etc.
-        return cls(name=name, verbose=verbose)
+        role = config.get("role")
+        skills = config.get("skills", [])
+        llm = config.get("llm")
 
-    def get_skill_by_name(self, name: str):
-        for skill in self.skills:
-            if hasattr(skill, "name") and skill.name == name:
-                return skill
-        return None
+        return cls(name=name, role=role, skills=skills, verbose=verbose, llm=llm)
 
-    def receive_message(self, message):
-        if action := getattr(message, "action", None):
-            if self.verbose:
-                print(f"[{self.name}] Action '{action}' détectée — délégation à la skill correspondante.")
-            skill = self.get_skill_by_name(action)
-            if skill:
-                return skill.run(message)
-            elif self.verbose:
-                print(f"[{self.name}] Aucun skill nommé '{action}' trouvé dans l'agent.")
-            return None
+    def receive_message(self, message: Message):
+        # Vérifie les actions définies dans les métadonnées et délègue au SkillManager
+        response = self.skill_manager.handle_message(message)
+        if response:
+            self.communication.send(response)
+            self.memory.store_message(response)
+            return response
+
+        # Traitement standard si aucune skill n'est déclenchée explicitement
         return self.process_message(message)
 
-    def process_message(self, message):
+    def process_message(self, message: Message):
         context = self.retriever.build_context(message)
 
         if self.role:
-            prompt = PromptBuilder.build(
-                role=self.role,
-                **context
-            )
+            prompt = PromptBuilder.build(role=self.role, **context)
         else:
             prompt = ""
             if context.get("memory"):
@@ -84,33 +107,56 @@ class BaseAgent:
 
         return response_message
 
-def cli_chat():
-    import sys
-    agent = BaseAgent(verbose=True)
 
-    print(f"Discussion avec {agent.name} (tape 'quit' pour quitter) :")
+
+
+def cli_chat():
+    agent = BaseAgent(verbose=True)
 
     conversation_id = None
 
     while True:
-        user_input = input("Vous: ")
+        user_input = input("Vous (ou 'quit', 'activate', 'run', 'deactivate'): ")
         if user_input.lower() == 'quit':
             break
 
-        user_message = Message(
-            origine="utilisateur",
-            destinataire=agent.name,
-            contenu=user_input,
-            conversation_id=conversation_id
-        )
+        # Test explicite pour l'activation/désactivation des skills
+        if user_input == "activate":
+            message = Message(
+                origine="utilisateur",
+                destinataire=agent.name,
+                contenu="Activation explicite du skill mémoire",
+                metadata={"activate_skill": "memory"}
+            )
+        elif user_input == "run":
+            message = Message(
+                origine="utilisateur",
+                destinataire=agent.name,
+                contenu="Exécution explicite du skill mémoire",
+                metadata={"skill": "memory"}
+            )
+        elif user_input == "deactivate":
+            message = Message(
+                origine="utilisateur",
+                destinataire=agent.name,
+                contenu="Désactivation explicite du skill mémoire",
+                metadata={"deactivate_skill": "memory"}
+            )
+        else:
+            message = Message(
+                origine="utilisateur",
+                destinataire=agent.name,
+                contenu=user_input,
+                conversation_id=conversation_id
+            )
 
-        response = agent.receive_message(user_message)
+        response = agent.receive_message(message)
+
         if response:
             conversation_id = response.conversation_id
             print(f"{agent.name}: {response.contenu}")
         else:
             print(f"{agent.name}: (aucune réponse)")
-
 
 if __name__ == "__main__":
     cli_chat()
