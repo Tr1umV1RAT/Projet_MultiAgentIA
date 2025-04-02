@@ -1,3 +1,4 @@
+# agents/agent_codeur.py
 from agents.base_agent import BaseAgent
 from skills.coder_skill import SkillCoder
 
@@ -21,9 +22,15 @@ class AgentCodeur(BaseAgent):
 
     def receive_message(self, message):
         if getattr(message, "action", None) == "coder":
+            context = message.metadata.get("context", "")
+            previous_code = self.retriever.get_latest_validated_code()
+
+            if previous_code:
+                context += f"\n\n💾 CODE VALIDÉ PRÉCÉDEMMENT :\n{previous_code}"
+
             return self.coder(
                 instruction=message.contenu,
-                context=message.metadata.get("context"),
+                context=context,
                 first_call=message.metadata.get("first_call", True)
             )
 

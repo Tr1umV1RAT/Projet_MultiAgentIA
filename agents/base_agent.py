@@ -56,19 +56,18 @@ class BaseAgent:
         return self.process_message(message)
 
     def process_message(self, message):
-        memory_summary = self.retriever.get_memory_summary(message)
+        context = self.retriever.build_context(message)
 
         if self.role:
             prompt = PromptBuilder.build(
                 role=self.role,
-                instruction=message.contenu,
-                memory=memory_summary
+                **context
             )
         else:
             prompt = ""
-            if memory_summary:
-                prompt += f"🧠 CONTEXTE :\n{memory_summary}\n\n"
-            prompt += f"🎯 INSTRUCTION :\n{message.contenu}"
+            if context.get("memory"):
+                prompt += f"🧠 CONTEXTE :\n{context['memory']}\n\n"
+            prompt += f"🎯 INSTRUCTION :\n{context['instruction']}"
 
         response_content = self.llm.query(prompt)
 
@@ -76,7 +75,8 @@ class BaseAgent:
             origine=self.name,
             destinataire=message.origine,
             contenu=response_content,
-            conversation_id=message.conversation_id
+            conversation_id=message.conversation_id,
+            metadata={"context_used": context}
         )
 
         self.communication.send(response_message)

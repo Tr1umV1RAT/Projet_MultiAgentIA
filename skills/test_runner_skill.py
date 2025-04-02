@@ -1,63 +1,60 @@
+# skills/test_runner_skill.py
 import os
+import tempfile
 import subprocess
-from datetime import datetime
 
-class SkillTestRunner:
-    def __init__(self, agent, project_path="project_outputs", memory=None, verbose=False):
+from skills.base_skill import BaseSkill
+from skills.communication.messages import Message
+
+class SkillTestRunner(BaseSkill):
+    name = "test_runner"
+
+    def __init__(self, agent, verbose=False):
         self.agent = agent
-        self.project_path = os.path.join(project_path, "code")
-        self.memory = memory
         self.verbose = verbose
 
-        os.makedirs(self.project_path, exist_ok=True)
+    def run(self, message: Message) -> Message:
+        code = message.contenu
 
-    def run_test_on_file(self, filepath: str) -> str:
-        full_path = os.path.join(self.project_path, filepath)
-        if not os.path.exists(full_path):
-            return f"[SkillTestRunner] Erreur : le fichier {full_path} n'existe pas."
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filepath = os.path.join(tmpdir, "test_code.py")
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(code)
 
-        try:
-            result = subprocess.run(
-                ["python", full_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=10,
-                text=True
-            )
-            output = result.stdout.strip()
-            errors = result.stderr.strip()
-        except Exception as e:
-            output = ""
-            errors = str(e)
+            try:
+                result = subprocess.run(
+                    ["python", filepath],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                output = result.stdout.strip()
+                error = result.stderr.strip()
 
-        report = f"""
-==== TEST DU FICHIER : {filepath} ====
-
---- SORTIE STANDARD ---
-{output if output else '[Aucune sortie]'}
-
---- ERREURS ---
-{errors if errors else '[Aucune erreur]'}
-"""
-
-        # Sauvegarde
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"test_result_{os.path.basename(filepath)}_{timestamp}.txt"
-        result_path = os.path.join(self.project_path, filename)
-        with open(result_path, "w", encoding="utf-8") as f:
-            f.write(report)
+                if result.returncode == 0:
+                    status = "passed"
+                else:
+                    status = "failed"
+            except Exception as e:
+                output = ""
+                error = str(e)
+                status = "error"
 
         if self.verbose:
-            print(f"[SkillTestRunner] Rapport enregistré : {result_path}")
+            print(f"[TestRunner] Résultat du test : {status}")
+            if output:
+                print("[stdout]", output)
+            if error:
+                print("[stderr]", error)
 
-        if self.memory:
-            self.memory.store_document(
-                content=report,
-                metadata={
-                    "type": "test_result",
-                    "tested_file": filepath,
-                    "timestamp": timestamp
-                }
-            )
-
-        return report
+        return Message(
+            origine=self.agent.name,
+            destinataire=message.origine,
+            contenu=f"Résultat du test : {status}\n\nSTDOUT:\n{output}\n\nSTDERR:\n{error}",
+            metadata={
+                "type": "test_result",
+                "status": status,
+                "stdout": output,
+                "stderr": error
+            }
+        )

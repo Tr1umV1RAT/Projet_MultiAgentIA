@@ -43,3 +43,6 @@ class LongTermMemory(BaseMemory):
         if self.db_path:
             self.cursor.execute("DELETE FROM memories")
             self.conn.commit()
+    @property
+    def path(self):
+        return self.db_path

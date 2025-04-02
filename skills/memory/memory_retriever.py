@@ -1,6 +1,6 @@
 from skills.base_skill import BaseSkill
 
-class MemoryRetrieverSkill(BaseSkill):
+class MemoryRetrieverSkills(BaseSkill):
     def __init__(self, memory_access_strategy, verbose=False):
         self.memory_access_strategy = memory_access_strategy
         self.verbose = verbose

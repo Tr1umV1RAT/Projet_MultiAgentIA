@@ -1,37 +1,33 @@
 # communication/prompt_builder.py
 
-from typing import Optional
-from skills.communication.messages import Message  # si besoin de typer plus tard
-from tools.llm_interface import LLMInterface
+# skills/communication/prompt_builder.py
+
+# Aucun import externe requis ici car tout est manipulé par concaténation texte
+
 class PromptBuilder:
     @staticmethod
-    def build(
-        role,
-        instruction: str,
-        memory: Optional[str] = None,
-        code: Optional[str] = None,
-        feedback: Optional[str] = None,
-        plan: Optional[str] = None,
-        phase: Optional[str] = None
-    ) -> str:
+    def build(role=None, instruction=None, memory=None, phase=None, **kwargs):
         """
-        Construit dynamiquement un prompt contextuel à partir des éléments mémoire,
-        feedback narratif, code existant et instruction utilisateur.
+        Génère un prompt structuré à partir d'un rôle, d'une instruction et de divers éléments de contexte.
         """
-        sections = []
+        prompt_parts = []
+
+        if role and hasattr(role, "system_prompt"):
+            prompt_parts.append(f"🧠 RÔLE :\n{role.system_prompt.strip()}\n")
 
         if memory:
-            sections.append(f"\U0001f9e0 CONTEXTE MEMOIRE :\n{memory}")
-        if plan:
-            sections.append(f"\U0001f4c8 PLAN ACTUEL :\n{plan}")
-        if code:
-            sections.append(f"\U0001f4bb CODE EXISTANT :\n{code}")
-        if feedback:
-            sections.append(f"\u270d\ufe0f RETOURS NARRATIFS :\n{feedback}")
+            prompt_parts.append(f"📚 MÉMOIRE :\n{memory.strip()}\n")
+
         if phase:
-            sections.append(f"\U0001f504 PHASE DU ROUND : {phase}")
+            prompt_parts.append(f"🔄 PHASE : {phase.strip()}\n")
 
-        sections.append(f"\U0001f3af INSTRUCTION :\n{instruction}")
+        if instruction:
+            prompt_parts.append(f"🎯 INSTRUCTION :\n{instruction.strip()}\n")
 
-        prompt_core = "\n\n".join(sections)
-        return role.get_prompt(prompt_core)
+        # Ajout dynamique des éléments contextuels supplémentaires (code, review, plan, etc.)
+        for key, value in kwargs.items():
+            if value:
+                title = key.upper().replace("_", " ")
+                prompt_parts.append(f"🔹 {title} :\n{value.strip()}\n")
+
+        return "\n".join(prompt_parts).strip()

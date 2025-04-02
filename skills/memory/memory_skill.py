@@ -5,7 +5,7 @@ from skills.memory.short_term_memory import ShortTermMemory
 from skills.memory.long_term_memory import LongTermMemory
 from skills.memory.working_memory import WorkingMemory
 from skills.memory.memory_manager import MemoryManager
-from skills.memory.memory_retriever import MemoryRetrieverSkill
+from skills.memory.memory_retriever_skill import MemoryRetrieverSkill
 from skills.memory.llm_memory_access import LLMMemoryAccess
 
 class MemorySkill(BaseSkill):
@@ -22,7 +22,7 @@ class MemorySkill(BaseSkill):
         self.working_memory = WorkingMemory(llm, self.long_term)
 
         memory_strategy = LLMMemoryAccess(llm, self.long_term, verbose=verbose)
-        self.retriever = MemoryRetrieverSkill(memory_strategy, verbose=verbose)
+        self.retriever = MemoryRetrieverSkill( memory_strategy, agent=agent_name, verbose=verbose)
 
         self.manager = MemoryManager(
             self.short_term, self.long_term, self.working_memory, importance_threshold

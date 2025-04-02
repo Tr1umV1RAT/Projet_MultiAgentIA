@@ -1,35 +1,40 @@
-# run_code_team.py
-
+# cli/run_code_team.py
+import argparse
 from teams.code_team import CodeTeam
-import os
 
-if __name__ == "__main__":
-    import argparse
+parser = argparse.ArgumentParser(description="Lancer une CodeTeam IA pour générer un projet logiciel.")
 
-    parser = argparse.ArgumentParser(description="Lancer un round de la CodeTeam")
-    parser.add_argument("objectif", type=str, nargs="?", help="Objectif du projet à coder")
-    parser.add_argument("--verbose", action="store_true", help="Afficher les messages internes")
-    parser.add_argument("--increment", type=str, help="Reprendre un projet existant depuis un dossier")
+parser.add_argument("projetacoder", type=str, help="Objectif du projet à coder (obligatoire)")
+parser.add_argument("--n_round", type=int, default=5, help="Nombre de rounds à exécuter (défaut : 5)")
+parser.add_argument("--name", type=str, default=None, help="Nom du projet (facultatif, sinon généré)")
+parser.add_argument("--review", type=int, default=3, help="Nombre de cycles codeur-reviewer (défaut : 3, 0 = désactivé)")
+parser.add_argument("--test", action="store_true", help="Activer une étape de test automatique (désactivée par défaut)")
+parser.add_argument("--narrateur", action="store_true", help="Inclure un agent narratif (NarrativeDesigner)")
+parser.add_argument("--narrator", dest="narrateur", action="store_true", help="Alias de --narrateur")
+parser.add_argument("--load", action="store_true", help="Reprendre un projet existant à partir de son nom")
+parser.add_argument("--verbose", "-vv", action="store_true", help="Activer les logs détaillés")
 
-    args = parser.parse_args()
+args = parser.parse_args()
 
-    if args.increment:
-        # Chargement depuis un état précédent
-        state_path = os.path.join(args.increment, "state", "project_state.json")
-        team = CodeTeam.from_saved_state(state_path, verbose=args.verbose)
-        objectif = team.history[0].contenu if team.history else "Continuer le projet"
-        print(f"\n=== Reprise d'un projet existant ===")
-    elif args.objectif:
-        team = CodeTeam(verbose=args.verbose)
-        objectif = args.objectif
-        print("\n=== Lancement d'un nouveau round de la CodeTeam ===")
-    else:
-        raise ValueError("Vous devez fournir soit un objectif, soit --increment dossier_projet")
+# === Chargement ou création ===
+if args.load:
+    if not args.name:
+        raise ValueError("--load nécessite un --name pour identifier le projet existant.")
+    print(f"🔄 Reprise du projet existant : {args.name}")
+    team = CodeTeam.load_project(name=args.name, verbose=args.verbose)
+else:
+    print("=== Lancement d'un nouveau round de la CodeTeam ===")
+    print(f"🎯 Objectif : {args.projetacoder}\n")
+    print(f"📁 Projet : {args.name or '[généré]'} | Rounds : {args.n_round} | Review : {args.review} | Test : {args.test} | Narrateur : {args.narrateur}\n")
 
-    print(f"🎯 Objectif : {objectif}\n")
+    team = CodeTeam(
+        objectif=args.projetacoder,
+        name=args.name,
+        n_round=args.n_round,
+        include_narrator=args.narrateur,
+        max_review_cycles=args.review,
+        enable_tests=args.test,
+        verbose=args.verbose
+    )
 
-    team.run_round(objectif)
-
-    print("\n=== Historique des messages échangés ===")
-    for msg in team.history:
-        print(f"[{msg.origine} → {msg.destinataire}]\n{msg.contenu}\n")
+team.run()
