@@ -1,3 +1,5 @@
+# agents/agent_narrative_designer.py
+
 from agents.base_agent import BaseAgent
 from skills.narrative_skill import SkillNarrative
 
@@ -11,30 +13,21 @@ class AgentNarrativeDesigner(BaseAgent):
             memory=memory if memory else self.memory,
             verbose=verbose
         )
+        self.skills.append(self.skill_narrative)
 
-    def narrate(self, objectif: str = None, code_en_cours: str = None, phase="initial") -> str:
-        return self.skill_narrative.generate_narrative(
-            objectif=objectif,
-            code_en_cours=code_en_cours,
-            phase=phase
-        )
+    def narrate(self, message):
+        return self.skill_narrative.run(message)
 
     def receive_message(self, message):
-        if getattr(message, "action", None) == "narrate" or message.type_message == "code":
-            feedback = self.narrate(
-                objectif=message.metadata.get("objectif"),
-                code_en_cours=message.contenu,
-                phase=message.metadata.get("phase", "integration")
-            )
+        # Si le message contient du code, proposer un feedback narratif
+        if message.metadata.get("type") == "code":
+            feedback = self.narrate(message)
+            # renvoie un message avec action="coder" pour boucler avec le codeur
+            feedback.metadata["action"] = "coder"
+            return feedback
 
-            from skills.communication.messages import Message
-            return Message(
-                origine=self.name,
-                destinataire="Codeur",
-                contenu=feedback,
-                action="coder",
-                metadata={"context": "narrative feedback", "first_call": False},
-                type_message="text"
-            )
+        # Sinon, traiter comme une demande de création narrative initiale
+        if message.metadata.get("action") == "narrate":
+            return self.narrate(message)
 
         return super().receive_message(message)

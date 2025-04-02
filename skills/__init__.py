@@ -1,5 +1,4 @@
 from .base_skill import BaseSkill
-from .reasoning import Reasoning
 from .communication.communication import Communication
 from .memory.short_term_memory import ShortTermMemory
 from .memory.long_term_memory import LongTermMemory

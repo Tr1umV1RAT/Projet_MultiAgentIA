@@ -1,3 +1,5 @@
+# agents/agent_reviewer.py
+
 from agents.base_agent import BaseAgent
 from skills.review_skill import SkillReview
 
@@ -11,22 +13,12 @@ class AgentReviewer(BaseAgent):
             memory=memory if memory else self.memory,
             verbose=verbose
         )
+        self.skills.append(self.skill_review)
 
-    def review(self, code: str) -> str:
-        feedback = self.skill_review.review_code(code)
-
-        from skills.communication.messages import Message
-        return Message(
-            origine=self.name,
-            destinataire="Codeur",
-            contenu=feedback,
-            action="coder",
-            metadata={"context": "review feedback", "first_call": False},
-            type_message="text"
-        )
+    def review(self, message):
+        return self.skill_review.run(message)
 
     def receive_message(self, message):
-        if getattr(message, "action", None) == "review":
-            return self.review(message.contenu)
-
+        if message.metadata.get("action") == "review":
+            return self.review(message)
         return super().receive_message(message)

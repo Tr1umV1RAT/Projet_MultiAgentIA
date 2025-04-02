@@ -1,70 +1,112 @@
-import argparse
+# teams/code_team.py
+
 from teams.base_team import BaseTeam
 from agents.agent_project_manager import AgentProjectManager
 from agents.agent_design_manager import AgentDesignManager
 from agents.agent_codeur import AgentCodeur
 from agents.agent_reviewer import AgentReviewer
 from agents.agent_narrative_designer import AgentNarrativeDesigner
-from skills.communication.messages import Message
+
+from roles.team_project_manager_role import RoleTeamProjectManager
+from roles.team_design_manager_role import RoleTeamDesignManager
+from roles.team_codeur_role import RoleTeamCodeur
+from roles.team_reviewer_role import RoleTeamReviewer
+from roles.team_narrative_designer_role import RoleTeamNarrativeDesigner
+
+from tools.project_saver import save_project_state, load_project_state
+from skills.memory.long_term_memory import LongTermMemory
+from skills.db_management.memory_manager import MemoryManager
 
 class CodeTeam(BaseTeam):
-    def __init__(self, name="CodeTeam", project_path="project_outputs", verbose=False, with_narrative=True):
+    def __init__(self, name="CodeTeam", project_path="project_outputs", verbose=False):
         super().__init__(name=name, project_path=project_path, verbose=verbose)
 
         self.agents = {
-            "ProjectManager": AgentProjectManager(name="ProjectManager", project_path=project_path, verbose=verbose),
-            "DesignManager": AgentDesignManager(name="DesignManager", project_path=project_path, verbose=verbose),
-            "Codeur": AgentCodeur(name="Codeur", project_path=project_path, verbose=verbose),
-            "Reviewer": AgentReviewer(name="Reviewer", project_path=project_path, verbose=verbose),
+            "ProjectManager": AgentProjectManager(role=RoleTeamProjectManager(), verbose=verbose),
+            "DesignManager": AgentDesignManager(role=RoleTeamDesignManager(), verbose=verbose),
+            "Codeur": AgentCodeur(role=RoleTeamCodeur(), verbose=verbose),
+            "Reviewer": AgentReviewer(role=RoleTeamReviewer(), verbose=verbose),
+            "NarrativeDesigner": AgentNarrativeDesigner(role=RoleTeamNarrativeDesigner(), verbose=verbose)
         }
-        if with_narrative:
-            self.agents["NarrativeDesigner"] = AgentNarrativeDesigner(name="NarrativeDesigner", project_path=project_path, verbose=verbose)
 
-    def run_round(self, objectif):
-        m1 = self.agents["ProjectManager"].dispatch_to_design(objectif)
-        self.send_message(m1)
-        m2 = self.route_message(m1)
-        self.send_message(m2)
-        m3 = self.route_message(m2)
-        self.send_message(m3)
-        if "NarrativeDesigner" in self.agents:
-            m4 = self.route_message(m3)
-            self.send_message(m4)
-        m5 = self.route_message(m4 if "NarrativeDesigner" in self.agents else m3)
-        self.send_message(m5)
-        m6 = self.route_message(m5)
-        self.send_message(m6)
-        m7 = Message(
-            origine="Système",
-            destinataire="ProjectManager",
-            contenu="Merci de produire une synthèse du projet",
-            action="synthesis",
-            type_message="text"
+    @classmethod
+    def from_saved_state(cls, path, verbose=False):
+        state = load_project_state(path)
+        instance = cls(name=state["team_name"], project_path=state["project_path"], verbose=verbose)
+
+        for name, conf in state["agents"].items():
+            ltm = LongTermMemory(path=conf["ltm_path"])
+            memory = MemoryManager(ltm=ltm)
+
+            if name == "ProjectManager":
+                agent = AgentProjectManager(role=RoleTeamProjectManager(), memory=memory, verbose=verbose)
+            elif name == "DesignManager":
+                agent = AgentDesignManager(role=RoleTeamDesignManager(), memory=memory, verbose=verbose)
+            elif name == "Codeur":
+                agent = AgentCodeur(role=RoleTeamCodeur(), memory=memory, verbose=verbose)
+            elif name == "Reviewer":
+                agent = AgentReviewer(role=RoleTeamReviewer(), memory=memory, verbose=verbose)
+            elif name == "NarrativeDesigner":
+                agent = AgentNarrativeDesigner(role=RoleTeamNarrativeDesigner(), memory=memory, verbose=verbose)
+            else:
+                continue
+
+            instance.agents[name] = agent
+
+        instance.history = state["history"]
+        return instance
+
+    def run_round(self, objectif, max_review_rounds=3):
+        # 1. PM transmet au DesignManager
+        msg_plan = self.agents["ProjectManager"].transmit_to_design_manager(objectif)
+        self.send_message(msg_plan)
+
+        # 2. DesignManager produit le plan d'architecture
+        plan_msg = self.route_message(msg_plan)
+        self.send_message(plan_msg)
+
+        # 3. Codeur implémente la première version selon le plan
+        code_msg = self.agents["Codeur"].receive_message(
+            plan_msg.copy_for("Codeur", metadata={"action": "coder", "first_call": True})
         )
-        self.send_message(m7)
-        m8 = self.route_message(m7)
-        self.send_message(m8)
+        self.send_message(code_msg)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Lancer une CodeTeam pour un projet de code collaboratif.")
-    parser.add_argument("objectif", type=str, help="L'objectif ou prompt initial du projet")
-    parser.add_argument("--n_round", type=int, default=3, help="Nombre de rounds à effectuer")
-    parser.add_argument("--no-reviewer", action="store_true", help="Désactiver le reviewer")
-    parser.add_argument("--no-narrator", action="store_true", help="Ne pas inclure de NarrativeDesigner")
-    parser.add_argument("--name", type=str, default="CodeTeam", help="Nom de la team ou du projet")
-    parser.add_argument("--verbose", action="store_true", help="Afficher les logs détaillés")
-    args = parser.parse_args()
+        # 4. NarrativeDesigner commente le code
+        narration_msg = self.agents["NarrativeDesigner"].receive_message(
+            code_msg.copy_for("NarrativeDesigner", metadata={"type": "code"})
+        )
+        self.send_message(narration_msg)
 
-    team = CodeTeam(
-        name=args.name,
-        verbose=args.verbose,
-        with_narrative=not args.no_narrator
-    )
+        # 5. Codeur réagit au feedback narratif
+        code_msg = self.agents["Codeur"].receive_message(
+            narration_msg.copy_for("Codeur", metadata={"action": "coder", "first_call": False})
+        )
+        self.send_message(code_msg)
 
-    if args.no_reviewer:
-        team.agents.pop("Reviewer", None)
+        # 6. Boucle Codeur ↔ Reviewer jusqu'à validation ou limite atteinte
+        validated = False
+        review_round = 0
 
-    for i in range(args.n_round):
-        if args.verbose:
-            print(f"\n===== ROUND {i + 1} =====\n")
-        team.run_round(args.objectif)
+        while not validated and review_round < max_review_rounds:
+            review_msg = self.agents["Reviewer"].receive_message(
+                code_msg.copy_for("Reviewer", metadata={"action": "review", "type": "code"})
+            )
+            self.send_message(review_msg)
+            review_round += 1
+
+            if review_msg.metadata.get("status") == "validated":
+                validated = True
+                break
+
+            # Codeur corrige le code en tenant compte du review + plan initial + narration
+            code_msg = self.agents["Codeur"].receive_message(
+                review_msg.copy_for("Codeur", metadata={"action": "coder", "first_call": False})
+            )
+            self.send_message(code_msg)
+
+        # 7. PM synthétise le round
+        synth_msg = self.agents["ProjectManager"].synthesize_round()
+        self.send_message(synth_msg)
+
+        # 8. Sauvegarde de l'état du projet
+        save_project_state(self, output_dir=f"{self.project_path}/state")

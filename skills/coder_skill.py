@@ -1,7 +1,14 @@
+# skills/coder_skill.py
+
 import os
 from datetime import datetime
+from tools.llm_interface import LLMInterface
+from skills.base_skill import BaseSkill
+from skills.communication.messages import Message
 
-class SkillCoder:
+class SkillCoder(BaseSkill):
+    name = "coder"
+
     def __init__(self, agent, project_path="project_outputs", memory=None, verbose=False):
         self.agent = agent
         self.project_path = project_path
@@ -22,47 +29,41 @@ class SkillCoder:
             else:
                 last_draft = self.memory.get_last_document({"type": "code", "status": "draft"})
                 if last_draft:
-                    prompt_sections.append(f"Dernier code à corriger :\n{last_draft['content']}\n")
+                    prompt_sections.append(f"Dernier brouillon de code :\n{last_draft['content']}\n")
 
-                comments = self.memory.search_documents({"type": "review"})
-                if comments:
-                    commentaires = "\n\n".join([doc["content"] for doc in comments])
-                    prompt_sections.append(f"Commentaires à intégrer :\n{commentaires}\n")
+        if context:
+            prompt_sections.append(f"Contexte :\n{context}\n")
 
-        # Ajout de l'instruction principale
-        prompt_sections.append(f"Instruction actuelle :\n{instruction}")
+        prompt_sections.append(f"Instruction :\n{instruction}")
 
-        # Génération du prompt complet
-        if hasattr(self.agent, "role") and self.agent.role and hasattr(self.agent.role, "get_prompt"):
-            full_instruction = "\n\n".join(prompt_sections)
-            full_prompt = self.agent.role.get_prompt(full_instruction)
-        else:
-            full_prompt = "\n\n".join(["Tu es un assistant de codage. Voici le contexte :"] + prompt_sections)
+        final_prompt = "\n\n".join(prompt_sections)
+        response = self.agent.llm.query(final_prompt)
 
-        # Interrogation du LLM
-        code = self.agent.llm.query(full_prompt)
-
-        # Sauvegarde fichier brut
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{filename_hint}_{timestamp}.py"
-        filepath = os.path.join(self.project_path, filename)
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(code)
+        filename = f"{filename_hint}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.py"
+        full_path = os.path.join(self.project_path, filename)
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(response)
 
         if self.verbose:
-            print(f"[SkillCoder] Code généré sauvegardé dans : {filepath}")
+            print(f"[SkillCoder] Code écrit dans : {full_path}")
 
-        # Enregistrement mémoire
-        if self.memory:
-            self.memory.store_document(
-                content=code,
-                metadata={
-                    "type": "code",
-                    "filename": filename,
-                    "instruction": instruction,
-                    "status": "draft",
-                    "timestamp": timestamp
-                }
-            )
+        return response
 
-        return code
+    def run(self, message: Message) -> Message:
+        instruction = message.contenu
+        context = message.metadata.get("context")
+        first_call = message.metadata.get("first_call", True)
+
+        generated_code = self.generate_code(
+            instruction=instruction,
+            context=context,
+            first_call=first_call
+        )
+
+        return Message(
+            origine=self.agent.name,
+            destinataire=message.origine,
+            contenu=generated_code,
+            conversation_id=message.conversation_id,
+            metadata={"type": "code", "status": "draft"}
+        )

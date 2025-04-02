@@ -2,7 +2,7 @@
 
 from typing import Optional
 from skills.communication.messages import Message  # si besoin de typer plus tard
-
+from tools.llm_interface import LLMInterface
 class PromptBuilder:
     @staticmethod
     def build(

@@ -1,7 +1,14 @@
+# skills/narrative_skill.py
+
 import os
 from datetime import datetime
+from skills.memory.memory_manager import MemoryManager
+from skills.base_skill import BaseSkill
+from skills.communication.messages import Message
+from tools.llm_interface import LLMInterface
+class SkillNarrative(BaseSkill):
+    name = "narrate"
 
-class SkillNarrative:
     def __init__(self, agent, project_path="project_outputs", memory=None, verbose=False):
         self.agent = agent
         self.project_path = os.path.join(project_path, "narration")
@@ -10,58 +17,60 @@ class SkillNarrative:
 
         os.makedirs(self.project_path, exist_ok=True)
 
-    def generate_narrative(self, objectif: str = None, code_en_cours: str = None, phase="initial") -> str:
-        if phase == "initial":
+    def run(self, message: Message) -> Message:
+        instruction = message.contenu
+        type_msg = message.metadata.get("type", "general")
+
+        if type_msg == "code":
             prompt = f"""
-Tu es un Narrative Designer IA. Ta mission est de créer un scénario narratif immersif, utilisable dans un projet de développement logiciel (ex : jeu, simulateur, application interactive).
+Tu es un concepteur narratif IA. Voici un extrait de code produit par un codeur :
 
-Objectif global du projet : {objectif}
+{instruction}
 
-Génère un contexte narratif cohérent : univers, ambiance, personnages principaux, quête centrale, antagonistes, tensions.
-N'utilise aucun code. Structure le résultat par parties : Monde, Objectif du joueur, Ennemis, Événements, Style.
+Ta tâche :
+- Vérifie que les noms de variables, classes, fonctions soient cohérents avec un univers narratif immersif
+- Propose des améliorations ou un style plus adapté
+- Ne modifie pas la logique fonctionnelle, uniquement le contexte narratif
 """
         else:
             prompt = f"""
-Tu es un Narrative Designer IA. Tu enrichis des projets logiciels par des éléments narratifs précis et ciblés.
+Tu es un narrateur IA. Génère une proposition de scénario, d'univers ou de monde immersif à partir de l'instruction suivante :
 
-Voici le code actuellement en cours d'écriture :
-{code_en_cours}
+{instruction}
 
-Tu dois suggérer des ajouts narratifs exploitables par un Codeur :
-- noms de variables, fonctions ou personnages
-- dialogues à afficher
-- objectifs de quête ou de mission
-
-Formule tes suggestions de manière précise, sans jamais écrire de code.
-Exemples :
-- "Ajoute une ligne dans 'init_boss' affichant : 'Le chaos approche... Arkaal se réveille.'"
-- "Renomme la variable 'enemy' en 'spectreDesRuines'."
-
-Tu ne modifies jamais la structure technique du projet.
-Tu ne proposes jamais de code brut. Tes suggestions doivent être ciblées, précises, et localisables.
+Inclue si possible :
+- Un titre
+- Une courte description du monde
+- Quelques éléments narratifs clés (personnages, factions, enjeux)
 """
 
-        suggestions = self.agent.llm.query(prompt)
+        feedback = self.agent.llm.query(prompt)
 
-        # Sauvegarde
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"narration_{phase}_{timestamp}.md"
-        filepath = os.path.join(self.project_path, filename)
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(suggestions)
-
-        if self.verbose:
-            print(f"[SkillNarrative] Narration sauvegardée dans : {filepath}")
+        filename = f"narrative_{type_msg}_{timestamp}.md"
+        path = os.path.join(self.project_path, filename)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(feedback)
 
         if self.memory:
-            self.memory.store_document(
-                content=suggestions,
+            msg = Message(
+                origine=self.agent.name,
+                destinataire="Archivage",
+                contenu=feedback,
                 metadata={
-                    "type": "narrative",
-                    "phase": phase,
-                    "objectif": objectif if objectif else "",
+                    "type": "narration",
+                    "subtype": type_msg,
+                    "status": "draft",
                     "timestamp": timestamp
                 }
             )
+            self.memory.store_to_ltm(msg)
 
-        return suggestions
+
+        return Message(
+            origine=self.agent.name,
+            destinataire=message.origine,
+            contenu=feedback,
+            conversation_id=message.conversation_id,
+            metadata={"type": "narration", "subtype": type_msg, "status": "draft"}
+        )

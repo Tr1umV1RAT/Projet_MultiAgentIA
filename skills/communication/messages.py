@@ -121,3 +121,22 @@ class Message:
             contenu=contenu,
             **kwargs
         )
+    def copy_for(self, destinataire: str, metadata: dict = None):
+            new_metadata = self.metadata.copy() if self.metadata else {}
+            if metadata:
+                new_metadata.update(metadata)
+
+            return Message(
+                origine=self.destinataire,
+                destinataire=destinataire,
+                contenu=self.contenu,
+                type_message=self.type_message,
+                importance=self.importance,
+                memoriser=self.memoriser,
+                dialogue=self.dialogue,
+                action="",  # on force à passer par metadata
+                affichage_force=self.affichage_force,
+                version_finale=self.version_finale,
+                conversation_id=self.conversation_id,
+                metadata=new_metadata
+            )
