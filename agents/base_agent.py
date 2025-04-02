@@ -35,7 +35,7 @@ class BaseAgent:
         agent_memory_path = os.path.join(base_path, self.name)
         os.makedirs(agent_memory_path, exist_ok=True)
 
-        # Initialisation du Skill de Mémoire
+        # Initialisation unique du Skill de Mémoire
         self.memory_skill = MemorySkill(
             name=self.name, 
             llm=self.llm, 
@@ -78,6 +78,12 @@ class BaseAgent:
             self.memory.store_message(response)
             return response
 
+        # Si aucun skill n'est déclenché explicitement et que c'est une commande spéciale, ne rien faire
+        if message.contenu.lower() in ["activate", "run", "deactivate"]:
+            if self.verbose:
+                print(f"[{self.name}] Commande spéciale '{message.contenu}' reçue, pas de réponse générée.")
+            return None
+
         # Traitement standard si aucune skill n'est déclenchée explicitement
         return self.process_message(message)
 
@@ -108,8 +114,6 @@ class BaseAgent:
         return response_message
 
 
-
-
 def cli_chat():
     agent = BaseAgent(verbose=True)
 
@@ -121,26 +125,20 @@ def cli_chat():
             break
 
         # Test explicite pour l'activation/désactivation des skills
-        if user_input == "activate":
+        if user_input in ["activate", "run", "deactivate"]:
+            metadata = {}
+            if user_input == "activate":
+                metadata = {"activate_skill": "memory"}
+            elif user_input == "run":
+                metadata = {"skill": "memory"}
+            elif user_input == "deactivate":
+                metadata = {"deactivate_skill": "memory"}
+
             message = Message(
                 origine="utilisateur",
                 destinataire=agent.name,
-                contenu="Activation explicite du skill mémoire",
-                metadata={"activate_skill": "memory"}
-            )
-        elif user_input == "run":
-            message = Message(
-                origine="utilisateur",
-                destinataire=agent.name,
-                contenu="Exécution explicite du skill mémoire",
-                metadata={"skill": "memory"}
-            )
-        elif user_input == "deactivate":
-            message = Message(
-                origine="utilisateur",
-                destinataire=agent.name,
-                contenu="Désactivation explicite du skill mémoire",
-                metadata={"deactivate_skill": "memory"}
+                contenu=user_input,
+                metadata=metadata
             )
         else:
             message = Message(
