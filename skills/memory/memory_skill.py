@@ -47,7 +47,7 @@ class MemorySkill(BaseSkill):
         return self.working_memory.retrieve(query, max_results)
 
     # Méthode améliorée pour afficher clairement les résultats
-    def run(self, message: Message):
+    def execute(self, message: Message):
         query = message.contenu
         results = self.compose_working_memory(query, max_results=3)
         
@@ -63,6 +63,6 @@ class MemorySkill(BaseSkill):
         )
 
         if self.verbose:
-            print(f"[MemorySkill] run() exécuté avec le message : '{query}'")
+            print(f"[MemorySkill] execute() exécuté avec le message : '{query}'")
 
         return response_message
