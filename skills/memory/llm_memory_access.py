@@ -1,31 +1,29 @@
-from skills.memory.memory_access_strategy import MemoryAccessStrategy
+from skills.memory.long_term_memory import LongTermMemory
 
-class LLMMemoryAccess(MemoryAccessStrategy):
-    def __init__(self, llm_interface, long_term_memory, verbose=False):
-        self.llm = llm_interface
-        self.ltm = long_term_memory
+class LLMMemoryAccess:
+    def __init__(self, llm, ltm: LongTermMemory, verbose=False):
+        self.llm = llm
+        self.ltm = ltm
         self.verbose = verbose
 
-    def retrieve(self, current_message, short_term_context=""):
-        # Méthode existante (on ne l'utilise plus directement pour la réponse)
-        relevant_messages = self.ltm.retrieve(current_message.contenu, max_results=10)
-        
-        if not relevant_messages:
-            return ""
-        
-        context_summary = "\n".join(
-            f"- {msg.origine} a dit : '{msg.contenu}'" for msg in relevant_messages
+    def retrieve(self, query, limit=5):
+        # Correction explicite : utiliser directement query (string), pas current_message.contenu
+        relevant_messages = self.ltm.retrieve(query, max_results=10)
+
+        prompt = (
+            f"Voici une liste de messages précédents liés à '{query}' :\n\n"
+            + "\n".join([msg.contenu for msg in relevant_messages])
+            + f"\n\nSélectionne les {limit} plus pertinents pour répondre précisément à la requête '{query}' :"
         )
-        
-        # Optionnellement, on pouvait formuler un prompt complet ici, mais nous voulons juste un résumé.
-        return context_summary.strip()
-    
-    def get_summary(self, current_message, short_term_context=""):
-        # Retourne simplement un résumé des messages pertinents dans la LTM
-        relevant_messages = self.ltm.retrieve(current_message.contenu, max_results=10)
-        if not relevant_messages:
-            return ""
-        summary = "\n".join(f"{msg.origine}: {msg.contenu}" for msg in relevant_messages)
-        #if self.verbose:
-            #print(f"[LLMMemoryAccess] Summary extrait:\n{summary}\n")
-        return summary.strip()
+
+        relevant_selection = self.llm.query(prompt)
+
+        # Logique éventuelle à ajuster selon format réponse du LLM
+        selected_messages = [
+            msg for msg in relevant_messages if msg.contenu in relevant_selection
+        ][:limit]
+
+        if self.verbose:
+            print(f"[LLMMemoryAccess] Messages sélectionnés pour '{query}': {selected_messages}")
+
+        return selected_messages

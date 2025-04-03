@@ -1,0 +1,361 @@
+[33mcommit 591e0a2ce85acb44cad168cb28cd297c0c5668df[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Apr 3 00:58:02 2025 +0200
+
+    ajout SkillManager
+
+[33mcommit d8d66a645211a56a1cb978142c044d6a419714d3[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Apr 2 05:14:25 2025 +0200
+
+    correctif en cours
+
+[33mcommit a786b4f5f8a373fabe3bcaec01d37622ac05aae8[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Apr 2 03:29:55 2025 +0200
+
+    Mise à jour majeur
+
+[33mcommit 2d7e0ae7d2979baf556316f7fd7058c17743d894[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Tue Apr 1 23:31:49 2025 +0200
+
+    ajout prompt_builder
+
+[33mcommit b60fb67cbed5991f0188f8f988ac918970d17a65[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sun Mar 30 20:31:34 2025 +0200
+
+    Mise à jour, système team
+
+[33mcommit f4e5740dffcec5b6e2e726eaf28b1627cdc1bb8d[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sun Mar 30 20:31:10 2025 +0200
+
+    Mise à jour, système team
+
+[33mcommit b376d82aeb9a1a3c1ce77ff6dcfd73c3781c80ac[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 29 01:41:51 2025 +0100
+
+    ajout skill et agent spécialisé et début team
+
+[33mcommit efc910627991176787baf0c26d86409deb5e3c00[m[33m ([m[1;31morigin/hugo[m[33m)[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 08:50:44 2025 +0100
+
+    ajout sauvegarde de l'état des teams et fonction load
+
+[33mcommit df3791ba8efe77360efa48329d54c20aed840f2c[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 06:54:36 2025 +0100
+
+    remise en place du système de team avec appel par cli
+
+[33mcommit dd6e0b7022a9f1e59ab4936484b2e8680a14e9a0[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 06:20:00 2025 +0100
+
+    Mise à jour mémoire longue et court terme
+
+[33mcommit 569f2f066975db630f467b541f214fd17070f090[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 05:07:05 2025 +0100
+
+    Correction majeur
+
+[33mcommit 05472812beb8844c13aaba5038b3bcb17607976b[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 05:06:50 2025 +0100
+
+    Correction majeur
+
+[33mcommit 90a0e0c0039cbd3d95fd3d70c5b6ce2f292f55e4[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 28 03:40:32 2025 +0100
+
+    Nettoyage
+
+[33mcommit 34e40e39abfaedf1e5de2d181fa738d8edeb35df[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Mar 27 18:22:14 2025 +0100
+
+    Nettoyage
+
+[33mcommit e607afee8f702a6637ed24fe79ad91d94884ccd8[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Mar 27 18:20:43 2025 +0100
+
+    ajout doc complète
+
+[33mcommit 38cbda736e2fbd2e8ec338c62abd8dec4b15ba14[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Mar 27 16:23:45 2025 +0100
+
+    Nettoyage
+
+[33mcommit 7a51f2892b208e6f3e576cc0e4f543c50af15b4e[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Mar 27 16:23:01 2025 +0100
+
+    Nettoyage
+
+[33mcommit a0fa20c7f62a27e25cc5611702cb36df6d834c73[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Thu Mar 27 00:29:50 2025 +0100
+
+    Nettoyage
+
+[33mcommit 1c6f11c8b85a93d22e243e8647a3b4d9c8255811[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 22:36:49 2025 +0100
+
+    Mise à jour mémoire et tools
+
+[33mcommit 33f5b85a5e1d2a640248fd052f5b842d2568daca[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 22:09:27 2025 +0100
+
+    Mise à jour mémoire et ajout cli
+
+[33mcommit 7ed7ec2373dc0e8cad9d0ca43dfb6a442c554a5c[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 21:39:07 2025 +0100
+
+    Nettoyage
+
+[33mcommit 1c586d9d0669bc34ab6ef362755c470a63184afa[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 21:21:51 2025 +0100
+
+    Travail sur la mémoire
+
+[33mcommit 233fb1d3ee7389bb8516e42204dae89697871d51[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 18:54:38 2025 +0100
+
+    Travail sur la mémoire
+
+[33mcommit 9c053a7f41be74ab02093655884bac956f150166[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 18:52:42 2025 +0100
+
+    Travail sur la mémoire
+
+[33mcommit 778e1743248c4fd61266ee0b2dfedb06dd9d5ff2[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 14:05:14 2025 +0100
+
+    Nettoyage
+
+[33mcommit ebb829be336dfb92a345f5aabae4ca6c2539dd0a[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 05:40:46 2025 +0100
+
+    travail majeur sur memoire
+
+[33mcommit 15f860fb5f419f88e057e05dfd85d28c3803269d[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 02:32:39 2025 +0100
+
+    reduction requirements.txt
+
+[33mcommit 451d7e31c4a5c1412446ec3cbf3d5fa88a1d1395[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 02:18:18 2025 +0100
+
+    archivage + début documentation
+
+[33mcommit 3877e7a7575d006f4bf50ee671657adfcc021698[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 01:11:34 2025 +0100
+
+    Mise à jour globale avec une meilleure intégration des rôle de l'intégration des skills dans les agents
+
+[33mcommit 17686d6c5b874b4cbd1df94244193b6d991b7b76[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Wed Mar 26 01:10:50 2025 +0100
+
+    Mise à jour globale avec une meilleure intégration des rôle de l'intégration des skills dans les agents
+
+[33mcommit 9b0a4ca38a07d3e5c1023c916dd423e2f25239e1[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Tue Mar 25 05:30:15 2025 +0100
+
+    Mise à jour système de mémoire
+
+[33mcommit c52cd9e220ea2febc7edbbf222328d89adca5b82[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Tue Mar 25 01:44:13 2025 +0100
+
+    Mise à jour globale
+
+[33mcommit c78328a88e68fbb6ac0a9871f76ca1a789bca7e6[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Mon Mar 24 00:06:02 2025 +0100
+
+    Mise à jour globale
+
+[33mcommit 29a804782b3a19e31b487ef668f7df566e4082b0[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sun Mar 23 18:57:09 2025 +0100
+
+    Mise à jour majeur/mémoire et interaction
+
+[33mcommit 9e9d46a216ad536db24f9a0cdeaf0e56949dcbf7[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sun Mar 23 04:15:09 2025 +0100
+
+    suppression dossier project
+
+[33mcommit 21d599ca6f53d9edd857968f3a56bcf635d60f48[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sun Mar 23 04:12:56 2025 +0100
+
+    mise à jour mémoire/agent_reviewer et début code_team
+
+[33mcommit c7e57720e77133ee7aca8f649633a6efe1eaa6b1[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 16:26:34 2025 +0100
+
+    ajout de test_agent_narrative_designer
+
+[33mcommit 97d865326071d536883b050ffda651be9c8caded[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 16:15:36 2025 +0100
+
+    ajout de agent_narrative_designer
+
+[33mcommit 3afa3f97d4a9aa025628d7bd6e6c85dc84338c4f[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 16:15:18 2025 +0100
+
+    ajout de agent_narrative_designer
+
+[33mcommit b747e9531ca4b0b27e1d883ecb73c3f810071239[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 16:11:51 2025 +0100
+
+    ajout du role narrative_designer
+
+[33mcommit abbda8c90dd4de821734689318de981265281755[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 15:53:52 2025 +0100
+
+    nettoyage
+
+[33mcommit 9b91082ab99fd3cbb5991bb1d6fba6130b5b8b35[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 15:51:28 2025 +0100
+
+    ajout agent_project_manager
+
+[33mcommit fd2e3611c8fc5cb599adb2c04aa89585c95de9de[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 15:20:28 2025 +0100
+
+    ajout agent_reviewer et tests du codeur
+
+[33mcommit c4ff215b0ed23a2c3dec802dc45bf0574979c598[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 12:57:17 2025 +0100
+
+    ajout agent_codeur pour test
+
+[33mcommit 6a38717d5bec3b4f1540a117e4fa462295a1a2a0[m
+Author: Tr1umV1RAT <147562241+Tr1umV1RAT@users.noreply.github.com>
+Date:   Sat Mar 22 12:20:15 2025 +0100
+
+    Update readme.md
+    
+    ajout set PYTHONPATH=%cd%
+
+[33mcommit c7fc2020542be4667a46cb692afc8e3b6be6fd64[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 02:14:15 2025 +0100
+
+    mise à jour codeur
+
+[33mcommit 6efde2f0357ed69c783e6d1dfb052ff595b0042d[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 01:56:50 2025 +0100
+
+    Mise à jour role, dbregistry et code_team
+
+[33mcommit d1eef80b59cb3d5f15ca96320a73e2702abfcb54[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 01:03:32 2025 +0100
+
+    suppression de doublons et du dossier script, integration d'un dossier exemple
+
+[33mcommit 32ee5a0a82e91b50ec31c2a8b70b06c97a2f1890[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 00:48:34 2025 +0100
+
+    Mise à jour readme
+
+[33mcommit 2b5eadf1cc36519db54be9a650c1b07516eceb45[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 00:43:12 2025 +0100
+
+    ajout de requirements.txt
+
+[33mcommit bf524eed82f86f4efd2a87d88892b00c03ea0489[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 00:36:50 2025 +0100
+
+    Mise à jour readme
+
+[33mcommit 7af3b8486f84ecf41ae4962c8f9d9072612d127e[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 00:35:15 2025 +0100
+
+    Mise à jour readme
+
+[33mcommit 5ad0c383e46a3ef1a218746b73a916642e466365[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Sat Mar 22 00:04:55 2025 +0100
+
+    Mise à jour majeur
+
+[33mcommit a8fe5b21ef658b6fb4eb642dc0618fa13817f812[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 15:01:05 2025 +0100
+
+    completion du readme
+
+[33mcommit bd276366cc4502b9a2369f564abab5d25283bfbb[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 14:08:15 2025 +0100
+
+    communication devient asynch; amélioration des échanges entre agents
+
+[33mcommit 934009763b21f04fecc01f3469dba154ff4939b8[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 12:54:02 2025 +0100
+
+    Changement readme
+
+[33mcommit 873c046f0c64479aee83c1687b5d28d4546b3a4f[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 12:03:45 2025 +0100
+
+    Changement LLM
+
+[33mcommit a9fa149b7a8411faaa9c384ff105914961656573[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 10:52:43 2025 +0100
+
+    Changement LLM
+
+[33mcommit 1347edb3eaee56997673c3802e5b802b50a7bfea[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 10:28:15 2025 +0100
+
+    Description claire et explicite des changements
+
+[33mcommit e596903c3c8530536d34b6de6849abd264bce077[m
+Author: Tr1umV1RAT <v1v3c@proton.me>
+Date:   Fri Mar 21 09:54:13 2025 +0100
+
+    Initialisation du projet multi-agents IA (code complet et modulaire).

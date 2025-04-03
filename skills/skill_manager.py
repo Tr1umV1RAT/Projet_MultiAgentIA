@@ -34,7 +34,7 @@ class SkillManager:
             skill = self.available_skills[skill_name]
             if Config.verbose:
                 print(f"[SkillManager][{self.agent.name}] Exécution du skill '{skill_name}' (Message ID : {message.id}).")
-            return skill.run(message)
+            return skill.execute(message)
         elif Config.verbose:
             print(f"[SkillManager][{self.agent.name}] Skill '{skill_name}' inactif ou inexistant.")
         return None
