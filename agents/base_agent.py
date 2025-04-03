@@ -79,7 +79,7 @@ class BaseAgent:
             return response
 
         # Si aucun skill n'est déclenché explicitement et que c'est une commande spéciale, ne rien faire
-        if message.contenu.lower() in ["activate", "execute", "deactivate"]:
+        if message.contenu.lower() in ["activate", "run", "deactivate"]:
             if self.verbose:
                 print(f"[{self.name}] Commande spéciale '{message.contenu}' reçue, pas de réponse générée.")
             return None
@@ -120,17 +120,17 @@ def cli_chat():
     conversation_id = None
 
     while True:
-        user_input = input("Vous (ou 'quit', 'activate', 'execute', 'deactivate'): ")
+        user_input = input("Vous (ou 'quit', 'activate', 'run', 'deactivate'): ")
         if user_input.lower() == 'quit':
             break
 
         # Test explicite pour l'activation/désactivation des skills
-        if user_input in ["activate", "execute", "deactivate"]:
+        if user_input in ["activate", "run", "deactivate"]:
             metadata = {}
             if user_input == "activate":
                 metadata = {"activate_skill": "memory"}
-            elif user_input == "execute":
-                metadata = {"execute_skill": "memory"}
+            elif user_input == "run":
+                metadata = {"skill": "memory"}
             elif user_input == "deactivate":
                 metadata = {"deactivate_skill": "memory"}
 
