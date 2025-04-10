@@ -1,41 +1,34 @@
 import os
-from skills.memory.base_memory import BaseMemory
 from skills.communication.messages import Message
 
-class ShortTermMemory(BaseMemory):
+class ShortTermMemory:
     def __init__(self, agent_name=None, memory_path=None):
-        self.agent_name = agent_name
-        self.memory_path = memory_path
-        self.messages = []
-        self._file_path = os.path.join(self.memory_path, "short_term_memory.txt") if self.memory_path else None
-        self._load_from_file()
+        self.agent_name = agent_name or "default_agent"
+        self.memory_path = memory_path or os.path.join("agent_memories", self.agent_name, "short_term_memory.txt")
+        os.makedirs(os.path.dirname(self.memory_path), exist_ok=True)
 
     def store(self, message: Message):
-        self.messages.append(message)
-        self._save_to_file()
+        with open(self.memory_path, "a", encoding="utf-8") as f:
+            f.write(f"{message.origine} ||| {message.contenu}\n")
 
-    def retrieve(self, query, max_results=5):
-        # Pour simplifier, on retourne les derniers messages stockés.
-        return self.messages[-max_results:]
+    def retrieve(self, query=None, max_results=5):
+        messages = []
+        if not os.path.exists(self.memory_path):
+            return messages
 
-    def clear(self):
-        self.messages.clear()
-        self._save_to_file()
+        with open(self.memory_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()[-max_results:]
 
-    def _save_to_file(self):
-        if self._file_path:
-            with open(self._file_path, "w", encoding="utf-8") as f:
-                for msg in self.messages:
-                    # On sauvegarde simplement l'origine et le contenu
-                    f.write(f"{msg.origine}: {msg.contenu}\n")
+        for line in lines:
+            parts = line.strip().split(" ||| ")
+            if len(parts) == 2:
+                origine, contenu = parts
+                msg = Message.text(
+                    expediteur=origine.strip(),
+                    destinataire=self.agent_name,
+                    contenu=contenu.strip()
+                )
 
-    def _load_from_file(self):
-        if self._file_path and os.path.exists(self._file_path):
-            with open(self._file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                from skills.communication.messages import Message
-                for line in lines:
-                    if ": " in line:
-                        origine, contenu = line.split(": ", 1)
-                        msg = Message(origine=origine.strip(), contenu=contenu.strip())
-                        self.messages.append(msg)
+                messages.append(msg)
+
+        return messages

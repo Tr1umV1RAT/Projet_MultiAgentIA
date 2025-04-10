@@ -140,3 +140,14 @@ class Message:
                 conversation_id=self.conversation_id,
                 metadata=new_metadata
             )
+            
+    @staticmethod
+    def text(expediteur, destinataire, contenu, **kwargs):
+        return Message(
+            origine=expediteur,
+            destinataire=destinataire,
+            type_message="text",
+            contenu=contenu,
+            importance=kwargs.get("importance", 1),
+            **kwargs
+        )
